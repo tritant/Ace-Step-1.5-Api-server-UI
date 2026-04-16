@@ -50,14 +50,6 @@ uv run acestep-api
 
 The server starts on `http://localhost:8001` by default.
 
-**3. (Optional) Launch with a specific model**
-
-```bash
-# XL Turbo BF16 (~10GB VRAM)
-set ACESTEP_CONFIG_PATH=acestep-v15-xl-turbo-bf16
-start_api_server.bat
-```
-
 ---
 
 ## Download Models
