@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACE-Step Studio</title>
+<script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+<script src="https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{--bg0:#060608;--bg1:#0d0d10;--bg2:#141417;--bg3:#1c1c21;--bg4:#242428;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--accent:#7c6aff;--accent2:#a593ff;--adim:rgba(124,106,255,0.14);--green:#22c55e;--red:#ef4444;--amber:#f59e0b;--text:#e8e8f0;--t2:#8888a0;--t3:#555560;--mono:'JetBrains Mono',monospace;--sans:'DM Sans',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text);font-family:var(--sans);font-size:13px}
+#app{display:grid;grid-template-columns:368px 1fr;grid-template-rows:42px 1fr;height:100vh}
+header{grid-column:1/-1;background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px}
+aside{background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg0)}
+/* TOPBAR */
+.logo{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent2);letter-spacing:.15em}
+.vsep{width:1px;height:18px;background:var(--border)}
+.tag{font-size:10px;background:var(--adim);color:var(--accent2);border:1px solid rgba(124,106,255,.3);padding:2px 7px;border-radius:3px;font-family:var(--mono);font-weight:600}
+.api-row{display:flex;align-items:center;gap:6px;margin-left:auto}
+.api-row input{background:var(--bg3);border:1px solid var(--border);color:var(--t2);padding:4px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;width:185px;transition:border-color .15s}
+.api-row input:focus{outline:none;border-color:var(--accent);color:var(--text)}
+#cdot{width:7px;height:7px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:background .3s}
+#cdot.ok{background:var(--green);box-shadow:0 0 5px rgba(34,197,94,.5)}
+#cdot.err{background:var(--red)}
+#clbl{font-size:10px;color:var(--t3);font-family:var(--mono)}
+#stats{font-size:10px;font-family:var(--mono);color:var(--t3)}
+#stats b{color:var(--accent2);font-weight:400}
+/* TABS */
+.tabrow{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.tab{padding:9px 9px;font-size:10px;font-weight:500;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;letter-spacing:.02em}
+.tab:hover{color:var(--t2)}
+.tab.on{color:var(--accent2);border-bottom-color:var(--accent)}
+/* PANELS */
+.pan{display:none;flex-direction:column;flex:1;overflow-y:auto;padding:14px;gap:9px}
+.pan.on{display:flex}
+.pan::-webkit-scrollbar{width:4px}
+.pan::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+/* FORM */
+.fld{display:flex;flex-direction:column;gap:4px}
+.lbl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;align-items:center}
+.lv{color:var(--accent2);font-family:var(--mono);font-weight:400}
+input[type=text],input[type=number],select,textarea{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:5px;font-family:var(--sans);font-size:12px;width:100%;transition:border-color .15s}
+input[type=text]:focus,input[type=number]:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical;font-family:var(--mono);font-size:11px;line-height:1.6}
+select{cursor:pointer}
+select option{background:var(--bg3)}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+/* BUTTONS */
+.bp{background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:6px;font-family:var(--sans);font-weight:600;font-size:12px;cursor:pointer;transition:all .15s;width:100%;display:flex;align-items:center;justify-content:center;gap:6px}
+.bp:hover{background:var(--accent2)}
+.bp:disabled{opacity:.4;cursor:not-allowed}
+.sm:disabled{opacity:.4;cursor:not-allowed}
+.bs:disabled{opacity:.4;cursor:not-allowed}
+.bs{background:var(--bg3);color:var(--t2);border:1px solid var(--border);padding:7px 12px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;transition:all .15s}
+.bs:hover{border-color:var(--border2);color:var(--text)}
+.sm{padding:4px 8px;font-size:10px;border-radius:4px;border:1px solid var(--border);background:var(--bg4);color:var(--t2);cursor:pointer;font-family:var(--mono);font-weight:600;transition:all .12s;white-space:nowrap}
+.sm:hover{border-color:var(--border2);color:var(--text)}
+.sm.ac{border-color:rgba(124,106,255,.4);color:var(--accent2);background:var(--adim)}
+.sm.dn{border-color:rgba(239,68,68,.4);color:#ef4444;background:rgba(239,68,68,.08)}
+/* TOGGLE */
+.tr{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
+.tl{font-size:11px;font-weight:500;color:var(--t2)}
+.tl small{display:block;font-size:10px;color:var(--t3);font-weight:400;margin-top:1px}
+.sw{position:relative;width:34px;height:18px;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0}
+.tk{position:absolute;inset:0;background:var(--bg4);border-radius:9px;transition:.2s;cursor:pointer;border:1px solid var(--border)}
+.tk::before{content:'';position:absolute;width:12px;height:12px;left:2px;top:2px;background:var(--t3);border-radius:50%;transition:.2s}
+input:checked+.tk{background:var(--accent);border-color:var(--accent)}
+input:checked+.tk::before{transform:translateX(16px);background:#fff}
+/* SEC */
+.sh{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+.sh::after{content:'';flex:1;height:1px;background:var(--border)}
+/* STATUS */
+.st{font-size:11px;font-family:var(--mono);padding:7px 10px;background:var(--bg0);border:1px solid var(--border);border-radius:5px;color:var(--t3);min-height:30px}
+.st.ok{color:var(--green);border-color:rgba(34,197,94,.2)}
+.st.er{color:var(--red);border-color:rgba(239,68,68,.2)}
+.st.ru{color:var(--amber);border-color:rgba(245,158,11,.2)}
+/* PROGRESS */
+.pb{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.pf{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;width:0%}
+/* TRACKS */
+#tarea{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;align-items:stretch}
+#tarea::-webkit-scrollbar{width:4px}
+#tarea::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+.tc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;border-left:3px solid var(--accent);transition:opacity .2s,border-left-color .2s;flex-shrink:0}
+.tc.mt{opacity:.3;border-left-color:var(--t3)}
+.tc.sl{border-left-color:var(--amber)}
+.th{display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--border)}
+.tn{font-size:11px;font-weight:600;color:var(--t2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono)}
+.tw{padding:8px 10px 4px}
+.tm{padding:4px 10px 8px;display:flex;gap:5px;flex-wrap:wrap}
+.mp{font-size:10px;font-family:var(--mono);color:var(--t3);background:var(--bg4);border:1px solid var(--border);padding:2px 6px;border-radius:3px}
+.mp.ac{color:var(--accent2);border-color:rgba(124,106,255,.25);background:var(--adim)}
+/* DROP */
+.dz{border:1.5px dashed var(--border2);border-radius:6px;padding:14px;text-align:center;color:var(--t3);font-size:11px;cursor:pointer;transition:all .15s}
+.dz:hover,.dz.ov{border-color:var(--accent);color:var(--accent2);background:var(--adim)}
+/* SRC DISPLAY */
+.sd{font-size:11px;font-family:var(--mono);color:var(--accent2);padding:5px 8px;background:var(--adim);border:1px solid rgba(124,106,255,.2);border-radius:4px;align-items:center;justify-content:space-between;display:none}
+.sd.on{display:flex}
+/* TRANSPORT */
+#tp{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.tb{width:30px;height:30px;border-radius:50%;border:1px solid var(--border2);background:var(--bg3);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;flex-shrink:0}
+.tb:hover{border-color:var(--accent);color:var(--accent2);background:var(--adim)}
+.tb.pl{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.1)}
+#ttime{font-family:var(--mono);font-size:11px;color:var(--t3);min-width:42px}
+#tlbl{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+/* NOTIF */
+#notif{position:fixed;bottom:16px;right:16px;z-index:999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.ni{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--text);max-width:280px;animation:slin .2s ease}
+.ni.ok{border-left:3px solid var(--green)}
+.ni.er{border-left:3px solid var(--red)}
+.ni.ru{border-left:3px solid var(--amber)}
+@keyframes slin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+/* SPINNER */
+.sp{width:13px;height:13px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* EMPTY */
+#es{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--t3)}
+#es p{font-size:12px;text-align:center;max-width:200px;line-height:1.6}
+/* BASE MODE BTNS */
+.mode-btn{padding:10px 4px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--t3);cursor:pointer;text-align:center;transition:all .15s;width:100%}
+.mode-btn:hover{border-color:var(--border2);color:var(--t2)}
+.mode-btn.on{border-color:var(--accent);color:var(--accent2);background:var(--adim)}
+/* INSTR BTNS */
+.ib{padding:6px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg3);color:var(--t3);cursor:pointer;text-align:center;font-size:10px;font-family:var(--mono);font-weight:600;transition:all .12s;text-transform:uppercase;letter-spacing:.03em;width:100%}
+.ib:hover{border-color:var(--border2);color:var(--t2)}
+.ib.on{border-color:var(--accent);color:var(--accent2);background:var(--adim)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<header>
+  <span class="logo">ACE·STEP STUDIO</span>
+  <div class="vsep"></div>
+  <span class="tag" id="mtag">TURBO</span>
+  <div class="api-row">
+    <div id="cdot"></div>
+    <span id="clbl">—</span>
+    <input type="text" id="apiurl" value="http://localhost:8001" placeholder="http://localhost:8001">
+    <button class="sm" onclick="checkServer()">CHECK</button>
+  </div>
+  <div class="vsep"></div>
+  <div id="stats">Done: <b id="sd">—</b> · Avg: <b id="sa">—</b>s</div>
+</header>
+
+<!-- SIDEBAR -->
+<aside>
+  <div class="tabrow">
+    <div class="tab on" data-p="compose">Compose</div>
+    <div class="tab" data-p="cover">Cover</div>
+    <div class="tab" data-p="repaint">Repaint</div>
+    <div class="tab" data-p="base">Base ★</div>
+    <div class="tab" data-p="adv">Avancé</div>
+    <div class="tab" data-p="service">Service</div>
+  </div>
+
+  <!-- COMPOSE (fusion Simple + Custom) -->
+  <div class="pan on" id="pan-compose">
+    <div class="fld">
+      <label class="lbl">Description naturelle</label>
+      <textarea id="insp-desc" rows="3" placeholder="Ex: une ballade folk mélancolique avec guitare acoustique, voix féminine douce, ambiance nocturne..."></textarea>
+    </div>
+    <button class="bp" id="btn-lm" onclick="runLM(false)" style="width:100%">✦ Générer via LM</button>
+    <button class="bp" id="btn-lm-full" onclick="runLM(true)" style="width:100%;background:var(--adim);color:var(--accent2);border:1px solid rgba(124,106,255,.3);font-size:11px">↺ Tout régénérer</button>
+    <!-- CHAMPS PARTAGÉS -->
+    <div class="sh">Détails</div>
+    <div class="fld">
+      <label class="lbl">Caption / Style <button onclick="g('compose-cap').value=''" class="sm dn" style="padding:1px 5px;font-size:9px">✕</button></label>
+      <textarea id="compose-cap" rows="3" placeholder="upbeat pop rock, electric guitars, punchy snare, female vocals, energetic..."></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:-4px">
+      <button class="sm ac" id="btn-format" onclick="runFormat()">✦ Format via LM</button>
+    </div>
+    <div class="fld">
+      <label class="lbl">Paroles <button onclick="g('compose-lyr').value=''" class="sm dn" style="padding:1px 5px;font-size:9px">✕</button></label>
+      <textarea id="compose-lyr" rows="6" placeholder="[Verse 1]&#10;Walking through the city...&#10;&#10;[Chorus]&#10;We rise together"></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:-4px">
+      <button class="sm ac" id="btn-format-lyr" onclick="runFormatLyrics()">✦ Enhance Lyrics</button>
+    </div>
+    <div class="g2">
+      <div class="fld">
+        <label class="lbl">Langue vocale</label>
+        <select id="compose-lang"><option value="unknown">Auto (détection LM)</option><option value="en">English</option><option value="fr" selected>Français</option><option value="zh">中文 (Chinese)</option><option value="ja">日本語 (Japanese)</option><option value="ko">한국어 (Korean)</option><option value="es">Español</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option><option value="ru">Русский</option><option value="ar">العربية</option><option value="hi">हिन्दी</option><option value="bn">বাংলা</option><option value="tr">Türkçe</option><option value="nl">Nederlands</option><option value="pl">Polski</option><option value="sv">Svenska</option><option value="vi">Tiếng Việt</option><option value="th">ภาษาไทย</option><option value="id">Bahasa Indonesia</option><option value="ms">Bahasa Melayu</option><option value="he">עברית</option><option value="fa">فارسی</option><option value="uk">Українська</option><option value="ro">Română</option><option value="cs">Čeština</option><option value="hu">Magyar</option><option value="fi">Suomi</option><option value="da">Dansk</option><option value="no">Norsk</option><option value="el">Ελληνικά</option><option value="yue">粵語 (Cantonese)</option></select>
+      </div>
+      <div class="fld"><label class="lbl">Durée (s) — -1=auto <button onclick="window.resetMeta()" class="sm dn" style="padding:1px 5px;font-size:9px;text-transform:none;letter-spacing:0" title="Remettre BPM, clé, mesure et durée sur auto">auto</button></label><input type="number" id="compose-dur" value="-1"></div>
+    </div>
+    <div class="g3">
+      <div class="fld"><label class="lbl">BPM</label><input type="number" id="compose-bpm" placeholder="auto"></div>
+      <div class="fld"><label class="lbl">Clé</label>
+        <select id="compose-key">
+          <option value="">Auto</option>
+          <optgroup label="Majeur">
+            <option>C Major</option>
+            <option>C# Major</option>
+            <option>Db Major</option>
+            <option>D Major</option>
+            <option>D# Major</option>
+            <option>Eb Major</option>
+            <option>E Major</option>
+            <option>F Major</option>
+            <option>F# Major</option>
+            <option>Gb Major</option>
+            <option>G Major</option>
+            <option>G# Major</option>
+            <option>Ab Major</option>
+            <option>A Major</option>
+            <option>A# Major</option>
+            <option>Bb Major</option>
+            <option>B Major</option>
+          </optgroup>
+          <optgroup label="Mineur">
+            <option>C minor</option>
+            <option>C# minor</option>
+            <option>D minor</option>
+            <option>D# minor</option>
+            <option>Eb minor</option>
+            <option>E minor</option>
+            <option>F minor</option>
+            <option>F# minor</option>
+            <option>G minor</option>
+            <option>G# minor</option>
+            <option>Ab minor</option>
+            <option>A minor</option>
+            <option>A# minor</option>
+            <option>Bb minor</option>
+            <option>B minor</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="fld"><label class="lbl">Mesure</label>
+        <select id="compose-timesig"><option value="">Auto</option><option value="4">4/4</option><option value="3">3/4</option><option value="6">6/8</option><option value="2">2/4</option></select>
+      </div>
+    </div>
+    <div class="tr">
+      <div class="tl">Instrumental</div>
+      <label class="sw"><input type="checkbox" id="compose-instr"><span class="tk"></span></label>
+    </div>
+    <div class="sh">Référence audio (optionnel)</div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:4px;line-height:1.5">Timbre, mixage, ambiance sonore — influence globale sur le résultat</div>
+    <div class="dz" id="ref-dz" onclick="g('ref-file').click()" ondragover="ev(event)" ondrop="dropRef(event)">Drop audio de référence ou cliquer</div>
+    <div class="sd" id="ref-sd"><span id="ref-sn">—</span><button class="sm ac" id="btn-ref-analyze-manual" style="display:none" onclick="analyzeSrc(referenceFile)">🔍 Analyser</button><button class="sm dn" onclick="clrRef()">✕</button></div>
+    <input type="file" id="ref-file" accept="audio/*" style="display:none" onchange="onRefFile(event)">
+    <div class="sh">Génération</div>
+    <div class="fld">
+      <label class="lbl">Variations <span class="lv" id="compose-bv">2</span></label>
+      <input type="range" id="compose-batch" min="1" max="8" value="2" oninput="g('compose-bv').textContent=this.value">
+    </div>
+    <div class="tr">
+      <div class="tl">Mode Thinking <small>LM génère les codes audio</small></div>
+      <label class="sw"><input type="checkbox" id="compose-think" checked><span class="tk"></span></label>
+    </div>
+    <button class="bp" id="btn-gen-compose" onclick="genCompose()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 12.5H11L9 22L19.5 11H13Z"/></svg>Générer
+    </button>
+    <div class="st" id="compose-stat">Prêt.</div>
+    <div class="pb"><div class="pf" id="compose-prog"></div></div>
+  </div>
+
+  <!-- COVER -->
+  <div class="pan" id="pan-cover">
+    <div style="background:rgba(124,106,255,.08);border:1px solid rgba(124,106,255,.2);border-radius:5px;padding:8px 10px;font-size:11px;color:var(--t2);line-height:1.6">
+      <b style="color:var(--accent2)">Cover</b> transforme le style d'un morceau en conservant sa structure mélodique et rythmique. Appelé "Remix" dans le Gradio officiel — c'est le même <code style="font-family:var(--mono);font-size:10px">task_type=cover</code>.
+    </div>
+    <div class="sh">Source audio</div>
+    <div style="font-size:11px;font-family:var(--mono);color:var(--t2);padding:5px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px" id="cover-src-info">Utilisez le bouton SRC dans la barre de transport</div>
+
+    <div class="sh">Référence audio (optionnel — influence le timbre)</div>
+    <div class="dz" id="cover-ref-dz" onclick="g('cover-ref-file').click()" ondragover="ev(event)" ondrop="dropCoverRef(event)">Drop audio de référence ou cliquer</div>
+    <input type="file" id="cover-ref-file" accept="audio/*" style="display:none" onchange="loadCoverRef(this.files[0])">
+    <div class="sd" id="cover-ref-sd"><span id="cover-ref-sn">—</span><button class="sm ac" id="btn-cover-ref-analyze" style="display:none" onclick="analyzeSrc(coverRefFile)">🔍 Analyser</button><button class="sm dn" onclick="clrCoverRef()">✕</button></div>
+
+    <div class="fld">
+      <label class="lbl">Style cible (caption)</label>
+      <textarea id="rcap" rows="3" placeholder="jazz piano avec contrebasse, ambiance club années 50, arrangement intime..."></textarea>
+    </div>
+    <div class="fld">
+      <label class="lbl">Langue vocale</label>
+      <select id="rlang"><option value="unknown">Auto</option><option value="en">English</option><option value="fr" selected>Français</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="es">Español</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option><option value="ru">Русский</option></select>
+    </div>
+    <div class="fld">
+      <label class="lbl">Nouvelles paroles (optionnel)</label>
+      <textarea id="rlyr" rows="12" placeholder="Laisser vide pour garder la structure vocale originale"></textarea>
+    </div>
+    <div class="fld">
+      <label class="lbl">Fidélité à la source <span class="lv" id="rstv">0.70</span></label>
+      <input type="range" id="rstr" min="0" max="1" step="0.05" value="0.7" oninput="g('rstv').textContent=parseFloat(this.value).toFixed(2)">
+      <small style="color:var(--t3);font-size:10px;margin-top:2px">0.3 = style libre · 0.7 = équilibré · 1.0 = fidèle à la structure</small>
+    </div>
+    <div class="fld">
+      <label class="lbl">Rétention mélodie <span class="lv" id="rcnstrv">0.50</span></label>
+      <input type="range" id="rcnstr" min="0" max="1" step="0.01" value="0.5" oninput="g('rcnstrv').textContent=parseFloat(this.value).toFixed(2)">
+      <small style="color:var(--t3);font-size:10px;margin-top:2px">0 = style libre · 1 = source exacte</small>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">BPM (optionnel)</label><input type="number" id="rbpm" placeholder="auto"></div>
+      <div class="fld"><label class="lbl">Durée (s)</label><input type="number" id="rdur" value="-1"></div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Clé</label>
+        <select id="rkey">
+          <option value="">Auto</option>
+          <optgroup label="Majeur">
+            <option>C Major</option><option>C# Major</option><option>Db Major</option>
+            <option>D Major</option><option>D# Major</option><option>Eb Major</option>
+            <option>E Major</option><option>F Major</option><option>F# Major</option>
+            <option>Gb Major</option><option>G Major</option><option>G# Major</option>
+            <option>Ab Major</option><option>A Major</option><option>A# Major</option>
+            <option>Bb Major</option><option>B Major</option>
+          </optgroup>
+          <optgroup label="Mineur">
+            <option>C minor</option><option>C# minor</option><option>D minor</option>
+            <option>D# minor</option><option>Eb minor</option><option>E minor</option>
+            <option>F minor</option><option>F# minor</option><option>G minor</option>
+            <option>G# minor</option><option>Ab minor</option><option>A minor</option>
+            <option>A# minor</option><option>Bb minor</option><option>B minor</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="fld"><label class="lbl">Mesure</label>
+        <select id="rtimesig"><option value="">Auto</option><option value="4">4/4</option><option value="3">3/4</option><option value="6">6/8</option><option value="2">2/4</option></select>
+      </div>
+    </div>
+    <div class="fld">
+      <label class="lbl">Variations <span class="lv" id="rbv">2</span></label>
+      <input type="range" id="rbatch" min="1" max="8" value="2" oninput="g('rbv').textContent=this.value">
+    </div>
+    <button class="bp" id="bgr" onclick="genRemix()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 12.5H11L9 22L19.5 11H13Z"/></svg>Cover / Remix
+    </button>
+    <div class="st" id="rstat">Prêt.</div>
+    <div class="pb"><div class="pf" id="rprog"></div></div>
+  </div>
+
+  <!-- REPAINT -->
+  <div class="pan" id="pan-repaint">
+    <div class="sh">1 · Source audio</div>
+    <div style="font-size:11px;font-family:var(--mono);color:var(--t2);padding:5px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px" id="repaint-src-info">Utilisez le bouton SRC dans la barre de transport</div>
+    <div class="sh">Référence audio (optionnel — influence le timbre)</div>
+    <div class="dz" id="repaint-ref-dz" onclick="g('repaint-ref-file').click()" ondragover="ev(event)" ondrop="dropRepaintRef(event)">Drop audio de référence ou cliquer</div>
+    <input type="file" id="repaint-ref-file" accept="audio/*" style="display:none" onchange="loadRepaintRef(this.files[0])">
+    <div class="sd" id="repaint-ref-sd"><span id="repaint-ref-sn">—</span><button class="sm ac" id="btn-repaint-ref-analyze" style="display:none" onclick="analyzeSrc(repaintRefFile)">🔍 Analyser</button><button class="sm dn" onclick="clrRepaintRef()">✕</button></div>
+    <div class="sh">2 · Sélection temporelle</div>
+    <div style="font-size:11px;font-family:var(--mono);color:var(--accent2);padding:5px 8px;background:var(--adim);border:1px solid rgba(124,106,255,.2);border-radius:4px" id="rpinfo">Chargez une piste puis dessinez une région dans le timeline</div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Début (s)</label><input type="number" id="rpstart" value="0" step="0.1"></div>
+      <div class="fld"><label class="lbl">Fin (s) — -1=fin</label><input type="number" id="rpend" value="-1" step="0.1"></div>
+    </div>
+    <div class="sh">3 · Contenu</div>
+    <div class="fld">
+      <label class="lbl">Langue vocale</label>
+      <select id="rplang"><option value="unknown">Auto</option><option value="en">English</option><option value="fr" selected>Français</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="es">Español</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option><option value="ru">Русский</option></select>
+    </div>
+    <div class="fld">
+      <label class="lbl">Caption pour la section</label>
+      <textarea id="rpcap" rows="3" placeholder="transition douce avec piano solo, contemplative..."></textarea>
+    </div>
+    <div class="fld">
+      <label class="lbl">Paroles pour la section</label>
+      <textarea id="rplyr" rows="8" placeholder="[Bridge]&#10;Whisper softly now"></textarea>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">BPM (optionnel)</label><input type="number" id="rppbpm" placeholder="auto"></div>
+      <div class="fld"><label class="lbl">Durée (s)</label><input type="number" id="rppdur" value="-1"></div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Mesure</label>
+        <select id="rpptimesig"><option value="">Auto</option><option value="4">4/4</option><option value="3">3/4</option><option value="6">6/8</option><option value="2">2/4</option></select>
+      </div>
+      <div class="fld"><label class="lbl">Clé</label>
+        <select id="rppkey">
+          <option value="">Auto</option>
+          <optgroup label="Majeur">
+            <option>C Major</option><option>C# Major</option><option>Db Major</option>
+            <option>D Major</option><option>D# Major</option><option>Eb Major</option>
+            <option>E Major</option><option>F Major</option><option>F# Major</option>
+            <option>Gb Major</option><option>G Major</option><option>G# Major</option>
+            <option>Ab Major</option><option>A Major</option><option>A# Major</option>
+            <option>Bb Major</option><option>B Major</option>
+          </optgroup>
+          <optgroup label="Mineur">
+            <option>C minor</option><option>C# minor</option><option>D minor</option>
+            <option>D# minor</option><option>Eb minor</option><option>E minor</option>
+            <option>F minor</option><option>F# minor</option><option>G minor</option>
+            <option>G# minor</option><option>Ab minor</option><option>A minor</option>
+            <option>A# minor</option><option>Bb minor</option><option>B minor</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+    <div class="fld">
+      <label class="lbl">Variations <span class="lv" id="rpbv">2</span></label>
+      <input type="range" id="rpbatch" min="1" max="4" value="2" oninput="document.getElementById('rpbv').textContent=this.value">
+    </div>
+    <div class="g2">
+      <div class="fld">
+        <label class="lbl">Mode</label>
+        <select id="rpmode" onchange="onRpMode()">
+          <option value="balanced">balanced</option>
+          <option value="conservative">conservative</option>
+          <option value="aggressive">aggressive</option>
+        </select>
+        <small style="color:var(--t3);font-size:10px">conservative=préserve · aggressive=régénère</small>
+      </div>
+      <div class="fld">
+        <label class="lbl">Strength <span class="lv" id="rpstrv">0.50</span></label>
+        <input type="range" id="rpstr" min="0" max="1" step="0.05" value="0.5" oninput="g('rpstrv').textContent=parseFloat(this.value).toFixed(2)">
+        <small style="color:var(--t3);font-size:10px">0=conserv · 1=agressif (balanced only)</small>
+      </div>
+    </div>
+    <button class="bp" id="bgrp" onclick="genRepaint()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 12.5H11L9 22L19.5 11H13Z"/></svg>Repaint section
+    </button>
+    <div class="st" id="rpstat">Prêt.</div>
+    <div class="pb"><div class="pf" id="rpprog"></div></div>
+  </div>
+
+  <!-- BASE PANEL -->
+  <div class="pan" id="pan-base">
+
+    <!-- WARNING -->
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);color:var(--amber);border-radius:5px;padding:8px 10px;font-size:11px;line-height:1.5">
+      ★ Ces modes nécessitent le modèle <b>Base</b> (<code style="font-family:var(--mono);font-size:10px">acestep-v15-base</code>). Sélectionnez-le dans l'onglet Service avant de générer.
+    </div>
+
+    <!-- MODE SELECTOR -->
+    <div class="sh">Mode</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <button class="mode-btn on" data-mode="lego" onclick="selMode('lego')">
+        <span style="font-size:16px;display:block;margin-bottom:3px">🧱</span>
+        <span style="font-size:10px;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Lego</span>
+        <span style="font-size:9px;color:var(--t3);display:block;margin-top:1px">Ajouter piste</span>
+      </button>
+      <button class="mode-btn" data-mode="extract" onclick="selMode('extract')">
+        <span style="font-size:16px;display:block;margin-bottom:3px">🔬</span>
+        <span style="font-size:10px;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Extract</span>
+        <span style="font-size:9px;color:var(--t3);display:block;margin-top:1px">Isoler stem</span>
+      </button>
+      <button class="mode-btn" data-mode="complete" onclick="selMode('complete')">
+        <span style="font-size:16px;display:block;margin-bottom:3px">🎹</span>
+        <span style="font-size:10px;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Complete</span>
+        <span style="font-size:9px;color:var(--t3);display:block;margin-top:1px">Ajouter accomp.</span>
+      </button>
+    </div>
+
+    <!-- AUDIO SOURCE -->
+    <div class="sh">Audio source</div>
+    <div style="font-size:11px;font-family:var(--mono);color:var(--t2);padding:5px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px" id="base-src-info">Utilisez le bouton SRC dans la barre de transport</div>
+
+    <!-- INSTRUMENT SELECTOR -->
+    <div class="sh">Instrument(s)</div>
+    <div style="font-size:10px;color:var(--t3);margin-bottom:4px" id="instr-hint">Sélectionnez l'instrument à <span id="instr-action">ajouter</span></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px" id="instr-grid">
+      <!-- filled by JS -->
+    </div>
+    <div id="complete-hint" style="display:none;font-size:10px;font-family:var(--mono);color:var(--accent2);padding:5px 8px;background:var(--adim);border:1px solid rgba(124,106,255,.2);border-radius:4px;margin-top:2px">
+      Complete : sélectionnez plusieurs instruments à ajouter
+    </div>
+
+    <div id="base-caption-block">
+      <div class="sh">Style / Caption</div>
+      <div class="fld">
+        <textarea id="bscap" rows="3" placeholder="bluesy lead guitar, warm tone, expressive vibrato..."></textarea>
+      </div>
+      <div class="sh">Paroles</div>
+      <div class="fld">
+        <textarea id="bslyr" rows="8" placeholder="[Verse 1]&#10;..."></textarea>
+      </div>
+    </div>
+
+    <!-- INTERVAL (lego) -->
+    <div id="lego-interval" style="display:none">
+      <div class="sh">Intervalle (optionnel)</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--t3);margin-bottom:4px">Glisser sur une piste dans le timeline pour définir l'intervalle · double-clic sur la région pour effacer</div>
+      <div class="g2">
+        <div class="fld"><label class="lbl">Début (s)</label><input type="number" id="bsstart" value="0" step="0.1"></div>
+        <div class="fld"><label class="lbl">Fin (s) — -1=fin</label><input type="number" id="bsend" value="-1" step="0.1"></div>
+      </div>
+    </div>
+
+    <!-- BATCH -->
+    <div class="fld">
+      <label class="lbl">Variations <span class="lv" id="bsbv">2</span></label>
+      <input type="range" id="bsbatch" min="1" max="4" value="2" oninput="g('bsbv').textContent=this.value">
+    </div>
+
+    <!-- REFERENCE AUDIO, META, MODE+STRENGTH (cachés pour extract) -->
+    <div id="base-extra">
+    <!-- REFERENCE AUDIO -->
+    <div class="sh">Référence audio (optionnel — influence le timbre)</div>
+    <div class="dz" id="base-ref-dz" onclick="g('base-ref-file').click()" ondragover="ev(event)" ondrop="dropBaseRef(event)">Drop audio de référence ou cliquer</div>
+    <input type="file" id="base-ref-file" accept="audio/*" style="display:none" onchange="loadBaseRef(this.files[0])">
+    <div class="sd" id="base-ref-sd"><span id="base-ref-sn">—</span><button class="sm ac" id="btn-base-ref-analyze" style="display:none" onclick="analyzeSrc(baseRefFile)">🔍 Analyser</button><button class="sm dn" onclick="clrBaseRef()">✕</button></div>
+
+    <!-- META visibles -->
+    <div class="g2" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="fld"><label class="lbl">BPM (optionnel)</label><input type="number" id="bsbpm" placeholder="auto"></div>
+      <div class="fld"><label class="lbl">Mesure</label>
+        <select id="bstimesig"><option value="">Auto</option><option value="4">4/4</option><option value="3">3/4</option><option value="6">6/8</option><option value="2">2/4</option></select>
+      </div>
+      <div class="fld"><label class="lbl">Clé</label>
+        <select id="bskey">
+          <option value="">Auto</option>
+          <optgroup label="Majeur">
+            <option>C Major</option><option>C# Major</option><option>Db Major</option>
+            <option>D Major</option><option>D# Major</option><option>Eb Major</option>
+            <option>E Major</option><option>F Major</option><option>F# Major</option>
+            <option>Gb Major</option><option>G Major</option><option>G# Major</option>
+            <option>Ab Major</option><option>A Major</option><option>A# Major</option>
+            <option>Bb Major</option><option>B Major</option>
+          </optgroup>
+          <optgroup label="Mineur">
+            <option>C minor</option><option>C# minor</option><option>D minor</option>
+            <option>D# minor</option><option>Eb minor</option><option>E minor</option>
+            <option>F minor</option><option>F# minor</option><option>G minor</option>
+            <option>G# minor</option><option>Ab minor</option><option>A minor</option>
+            <option>A# minor</option><option>Bb minor</option><option>B minor</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+    <input type="hidden" id="bsdur" value="-1">
+    <div class="fld">
+      <label class="lbl">Langue vocale</label>
+      <select id="bslang"><option value="unknown">Auto</option><option value="en">English</option><option value="fr" selected>Français</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="es">Español</option><option value="de">Deutsch</option><option value="it">Italiano</option><option value="pt">Português</option><option value="ru">Русский</option></select>
+    </div>
+
+    <!-- MODE + STRENGTH (lego uniquement) -->
+    <div id="bs-mode-strength" class="g2">
+      <div class="fld">
+        <label class="lbl">Mode</label>
+        <select id="bsmode" onchange="onBsMode()">
+          <option value="balanced">balanced</option>
+          <option value="conservative">conservative</option>
+          <option value="aggressive">aggressive</option>
+        </select>
+        <small style="color:var(--t3);font-size:10px">conservative=préserve · aggressive=régénère</small>
+      </div>
+      <div class="fld">
+        <label class="lbl">Strength <span class="lv" id="bsstrv">0.50</span></label>
+        <input type="range" id="bsstr" min="0" max="1" step="0.05" value="0.5" oninput="g('bsstrv').textContent=parseFloat(this.value).toFixed(2)">
+        <small style="color:var(--t3);font-size:10px">0=conserv · 1=agressif (balanced only)</small>
+      </div>
+    </div>
+
+    <!-- AUDIO COVER STRENGTH (complete uniquement) -->
+    <div id="bs-cover-strength" style="display:none">
+      <div class="fld">
+        <label class="lbl">Audio Cover Strength <span class="lv" id="bsacsv">0.06</span></label>
+        <input type="range" id="bsacs" min="0" max="1" step="0.01" value="0.06" oninput="g('bsacsv').textContent=parseFloat(this.value).toFixed(2)">
+      </div>
+    </div>
+
+    </div><!-- /base-extra -->
+
+    <button class="bp" id="bgbs" onclick="genBase()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 12.5H11L9 22L19.5 11H13Z"/></svg><span id="bgbs-lbl">Lego</span>
+    </button>
+    <div class="st" id="bsstat">Prêt. Sélectionnez un mode et uploadez un audio source.</div>
+    <div class="pb"><div class="pf" id="bsprog"></div></div>
+  </div>
+
+  <!-- AVANCÉ -->
+  <div class="pan" id="pan-adv">
+    <div class="sh">Workflow</div>
+    <div class="tr"><div class="tl">Analyse auto à l'ajout d'une source/référence <small>Désactiver pour analyser manuellement</small></div><label class="sw"><input type="checkbox" id="auto-analyze"><span class="tk"></span></label></div>
+    <div class="sh">DiT</div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Steps <span class="lv" id="astv">8</span></label><input type="range" id="asteps" min="1" max="100" value="8" oninput="g('astv').textContent=this.value"></div>
+      <div class="fld"><label class="lbl">CFG scale <span class="lv" id="acfgv">7.0</span></label><input type="range" id="acfg" min="1" max="20" step="0.5" value="7" oninput="g('acfgv').textContent=parseFloat(this.value).toFixed(1)"></div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Shift <span class="lv" id="ashv">3.0</span></label><input type="range" id="ashift" min="1" max="10" step="0.5" value="3" oninput="g('ashv').textContent=parseFloat(this.value).toFixed(1)"></div>
+      <div class="fld"><label class="lbl">Méthode</label><select id="ainfer"><option value="ode" selected>ODE (rapide)</option><option value="sde">SDE (varié)</option></select></div>
+    </div>
+    <div class="fld"><label class="lbl">Timesteps personnalisés</label><input type="text" id="atimesteps" placeholder="0.97,0.76,0.615,0.5,0.395,0.28,0.18,0.085,0"></div>
+    <div class="tr"><div class="tl">Adaptive Dual Guidance <small>Base model only</small></div><label class="sw"><input type="checkbox" id="aadg"><span class="tk"></span></label></div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">CFG start <span class="lv" id="acfgsv">0.0</span></label><input type="range" id="acfgstart" min="0" max="1" step="0.05" value="0" oninput="g('acfgsv').textContent=parseFloat(this.value).toFixed(2)"></div>
+      <div class="fld"><label class="lbl">CFG end <span class="lv" id="acfgev">1.0</span></label><input type="range" id="acfgend" min="0" max="1" step="0.05" value="1" oninput="g('acfgev').textContent=parseFloat(this.value).toFixed(2)"></div>
+    </div>
+    <div class="sh">LM</div>
+    <div class="fld">
+      <label class="lbl">Modèle LM <small style="color:var(--t3);text-transform:none;font-weight:400">— plus grand = meilleure qualité, plus lent</small></label>
+      <select id="alm-model">
+        <option value="">Défaut serveur</option>
+        <option value="acestep-5Hz-lm-0.6B">0.6B — rapide, VRAM faible</option>
+        <option value="acestep-5Hz-lm-1.7B" selected>1.7B — recommandé</option>
+        <option value="acestep-5Hz-lm-4B">4B — meilleure qualité</option>
+      </select>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Temperature <span class="lv" id="altv">0.85</span></label><input type="range" id="altemp" min="0" max="2" step="0.05" value="0.85" oninput="g('altv').textContent=parseFloat(this.value).toFixed(2)"></div>
+      <div class="fld"><label class="lbl">CFG scale <span class="lv" id="alcv">2.0</span></label><input type="range" id="alcfg" min="1" max="4" step="0.25" value="2" oninput="g('alcv').textContent=parseFloat(this.value).toFixed(2)"></div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Top-K <span class="lv" id="atkv">0</span></label><input type="range" id="atopk" min="0" max="100" step="5" value="0" oninput="g('atkv').textContent=this.value"></div>
+      <div class="fld"><label class="lbl">Top-P <span class="lv" id="atpv">0.90</span></label><input type="range" id="atopp" min="0" max="1" step="0.05" value="0.9" oninput="g('atpv').textContent=parseFloat(this.value).toFixed(2)"></div>
+    </div>
+    <div class="fld"><label class="lbl">Negative prompt</label><input type="text" id="aneg" value="NO USER INPUT"></div>
+    <div class="sh">Chain-of-Thought</div>
+    <div class="tr"><div class="tl">CoT Métas <small>BPM, clé, durée auto</small></div><label class="sw"><input type="checkbox" id="acotm" checked><span class="tk"></span></label></div>
+    <div class="tr"><div class="tl">CoT Caption <small>LM réécrit votre caption</small></div><label class="sw"><input type="checkbox" id="acotc"><span class="tk"></span></label></div>
+    <div class="tr"><div class="tl">CoT Langue <small>Détection automatique</small></div><label class="sw"><input type="checkbox" id="acotl" checked><span class="tk"></span></label></div>
+    <div class="tr"><div class="tl">Constrained decoding <small>Format LM structuré — désactiver = debug only</small></div><label class="sw"><input type="checkbox" id="acd" checked><span class="tk"></span></label></div>
+    <div class="sh">Seed</div>
+    <div class="tr"><div class="tl">Seed aléatoire</div><label class="sw"><input type="checkbox" id="arseed" checked onchange="g('seedfld').style.opacity=this.checked?'.4':'1'"><span class="tk"></span></label></div>
+    <div class="fld" id="seedfld" style="opacity:.4">
+      <label class="lbl">Seeds fixes (virgule séparés)</label>
+      <input type="text" id="aseeds" placeholder="42,123,456">
+    </div>
+    <div class="sh">Sortie</div>
+    <div class="fld"><label class="lbl">Format audio</label>
+      <select id="afmt"><option value="mp3" selected>MP3</option><option value="flac">FLAC (lossless)</option><option value="wav">WAV</option><option value="wav32">WAV 32-bit</option><option value="opus">OPUS</option><option value="aac">AAC</option></select>
+    </div>
+  </div>
+
+  <!-- SERVICE -->
+  <div class="pan" id="pan-service">
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px 10px;font-size:11px;color:var(--t2);line-height:1.5">
+      Le serveur démarre avec le modèle défini dans <code style="font-family:var(--mono);font-size:10px">.env</code>. Utilisez ce panneau uniquement pour changer de modèle à chaud — opération longue (30-120s).
+    </div>
+    <div class="sh">Modèle DiT</div>
+    <div class="fld">
+      <label class="lbl">Main Model Path</label>
+      <select id="svc-model" onchange="onMC(true)">
+        <option value="acestep-v15-turbo">acestep-v15-turbo</option>
+        <option value="acestep-v15-turbo-shift1">acestep-v15-turbo-shift1</option>
+        <option value="acestep-v15-turbo-shift3">acestep-v15-turbo-shift3</option>
+        <option value="acestep-v15-sft">acestep-v15-sft</option>
+        <option value="acestep-v15-base" selected>acestep-v15-base</option>
+        <option value="acestep-v15-xl-turbo-bf16">acestep-v15-xl-turbo-bf16 ★ XL BF16</option>
+        <option value="acestep-v15-xl-sft-bf16">acestep-v15-xl-sft-bf16 ★ XL BF16</option>
+        <option value="acestep-v15-xl-base-bf16">acestep-v15-xl-base-bf16 ★ XL BF16</option>
+      </select>
+    </div>
+    <div class="sh">Modèle LM</div>
+    <div class="fld">
+      <label class="lbl">5Hz LM Model Path</label>
+      <select id="svc-lm">
+        <option value="">— inchangé —</option>
+        <option value="acestep-5Hz-lm-0.6B">0.6B — rapide</option>
+        <option value="acestep-5Hz-lm-1.7B" selected>1.7B — recommandé</option>
+        <option value="acestep-5Hz-lm-4B">4B — meilleure qualité</option>
+      </select>
+    </div>
+    <div class="tr">
+      <div class="tl">Initialiser le LM <small>Plus lent mais requis pour Thinking</small></div>
+      <label class="sw"><input type="checkbox" id="svc-init-llm" checked onchange="updateThinkingState()"><span class="tk"></span></label>
+    </div>
+    <button class="bp" id="btn-svc-init" onclick="initService()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      Initialiser le service
+    </button>
+    <div class="st" id="svc-stat">Prêt.</div>
+    <div class="sh">Modèles chargés</div>
+    <div class="st" id="svc-models" style="font-size:10px;line-height:1.6">Chargement...</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main>
+  <div id="tp">
+    <button class="tb" id="bplay" onclick="tPlay()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </button>
+    <button class="tb" onclick="tStop()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+    </button>
+    <button class="tb" onclick="tRewind()" title="Retour au début">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <span id="ttime">0:00</span>
+    <span id="tlbl">—</span>
+    <div class="vsep"></div>
+    <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">
+      <span style="font-size:10px;font-weight:600;color:var(--t3);white-space:nowrap">Source audio</span>
+      <div id="global-src-name" style="font-size:11px;font-family:var(--mono);color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">aucune</div>
+      <button class="sm" onclick="g('global-src-file').click()">upload</button>
+      <button class="sm" id="btn-src-to-ref" style="display:none" onclick="srcToRef()" title="Envoyer la source comme référence audio dans Compose">→ Réf</button>
+      <button class="sm ac" id="btn-analyze-manual" style="display:none" onclick="analyzeSrc()">🔍 Analyser</button>
+      <span class="sm ac" id="btn-analyze" style="display:none">🔍 —</span>
+      <button class="sm dn" id="global-src-clear" style="display:none" onclick="clrSrc()">✕</button>
+      <input type="file" id="global-src-file" accept="audio/*" style="display:none" onchange="onSrcFile(event)">
+      <button class="sm" onclick="clearTracks()">Clear all</button>
+    </div>
+  </div>
+  <div id="tarea">
+    <div id="es">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      <p>Générez de la musique pour voir les pistes ici</p>
+    </div>
+  </div>
+</main>
+</div>
+<div id="notif"></div>
+
+<script>
+const T=[]; let playing=false;
+let lmCodesStale = false; // true quand les métadonnées ont été modifiées après un runLM
+let remixFile=null,repaintFile=null,referenceFile=null,baseFile=null,coverRefFile=null,repaintRefFile=null,baseRefFile=null;
+
+function loadBaseRef(f){if(!f)return;baseRefFile=f;g('base-ref-sd').className='sd on';g('base-ref-sn').textContent=f.name;if(!isAutoAnalyze()){g('btn-base-ref-analyze').style.display='';}else{g('btn-base-ref-analyze').style.display='none';analyzeSrc(f);}}
+function clrBaseRef(){baseRefFile=null;g('base-ref-sd').className='sd';g('base-ref-sn').textContent='—';g('btn-base-ref-analyze').style.display='none';}
+window.dropBaseRef=e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f)loadBaseRef(f);};
+
+function loadRepaintRef(f){if(!f)return;repaintRefFile=f;g('repaint-ref-sd').className='sd on';g('repaint-ref-sn').textContent=f.name;if(!isAutoAnalyze()){g('btn-repaint-ref-analyze').style.display='';}else{g('btn-repaint-ref-analyze').style.display='none';analyzeSrc(f);}}
+function clrRepaintRef(){repaintRefFile=null;g('repaint-ref-sd').className='sd';g('repaint-ref-sn').textContent='—';g('btn-repaint-ref-analyze').style.display='none';}
+window.dropRepaintRef=e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f)loadRepaintRef(f);};
+
+function loadCoverRef(f){if(!f)return;coverRefFile=f;g('cover-ref-sd').className='sd on';g('cover-ref-sn').textContent=f.name;if(!isAutoAnalyze())g('btn-cover-ref-analyze').style.display='';else{g('btn-cover-ref-analyze').style.display='none';analyzeSrc(f);}}
+function clrCoverRef(){coverRefFile=null;g('cover-ref-sd').className='sd';g('cover-ref-sn').textContent='—';g('btn-cover-ref-analyze').style.display='none';}
+window.dropCoverRef=e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f)loadCoverRef(f);};
+
+const g=id=>document.getElementById(id);
+const API=()=>g('apiurl').value.trim().replace(/\/$/,'');
+
+// NOTIFY
+function notif(msg,type='ok',dur=3500){
+  const d=document.createElement('div');
+  d.className='ni '+type; d.textContent=msg;
+  g('notif').appendChild(d);
+  setTimeout(()=>d.remove(),dur);
+}
+
+// STATUS
+function setSt(id,msg,type=''){const e=g(id);if(e){e.textContent=msg;e.className='st '+(type||'')}}
+
+// Sélectionne une option dans compose-key par son texte (les options n'ont pas de value explicite)
+function setKeySelect(val) {
+  if (!val) return;
+  g('compose-key').value = val;
+}
+
+window.resetMeta = function() {
+  g('compose-bpm').value = '';
+  g('compose-key').value = '';
+  g('compose-timesig').value = '';
+  g('compose-dur').value = '-1';
+  clearStale();
+  notif('Métadonnées remises sur auto', 'ok', 2000);
+};
+
+function markStale() {}
+function clearStale() {}
+
+// PROGRESS
+function progAnim(id,on){
+  const b=g(id);if(!b)return;
+  if(on){b.style.width='0%';b.style.transition='none';setTimeout(()=>{b.style.transition='width 5s ease-out';b.style.width='80%'},50)}
+  else{b.style.transition='width .3s';b.style.width='100%';setTimeout(()=>{b.style.width='0%';b.style.transition='none'},400)}
+}
+
+// TABS
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.pan').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    g('pan-'+t.dataset.p).classList.add('on');
+    if(t.dataset.p==='service') loadModels();
+  }
+});
+
+// SERVER
+async function checkServer(){
+  try{
+    const r=await fetch(`${API()}/health`,{signal:AbortSignal.timeout(3000)});
+    const d=await r.json();
+    if(d.code===200){g('cdot').className='ok';g('clbl').textContent='ok';loadModels();updStats()}
+  }catch{g('cdot').className='err';g('clbl').textContent='offline'}
+}
+
+async function updStats(){
+  try{
+    const r=await fetch(`${API()}/v1/stats`);const d=await r.json();const s=d.data||{};
+    g('sd').textContent=s.jobs?.succeeded??'—';
+    g('sa').textContent=s.avg_job_seconds?parseFloat(s.avg_job_seconds).toFixed(1):'—';
+  }catch{}
+}
+
+async function loadModels(){
+  try{
+    const r=await fetch(`${API()}/v1/models`);const d=await r.json();
+    const models=d.data||[];
+    if(!models.length){
+      const svcModels=g('svc-models');
+      if(svcModels) svcModels.textContent='Aucun modèle — vérifier la connexion';
+      return;
+    }
+    // Support deux formats : {name, is_default} et {id, name} (OpenAI)
+    const normalized = models.map(m => ({
+      name: m.is_default !== undefined ? m.name : (m.id?.split('/').pop() || m.name || m.id || ''),
+      is_default: m.is_default ?? true,
+      is_loaded: m.is_loaded ?? true
+    }));
+    const defaultModel = normalized.find(m=>m.is_default) || normalized[0];
+    if(defaultModel) updateTag(defaultModel.name);
+    const svcSel=g('svc-model');
+    if(svcSel && defaultModel){
+      const opt = [...svcSel.options].find(o => defaultModel.name.includes(o.value) || o.value.includes(defaultModel.name));
+      if(opt) svcSel.value = opt.value;
+    }
+    onMC(false);
+    const svcModels=g('svc-models');
+    if(svcModels) svcModels.textContent=normalized.map(m=>(m.is_default?'★ ':'  ')+m.name+(m.is_loaded?' [chargé]':'')).join('\n');
+  }catch(e){ console.warn('[loadModels] error:', e); }
+}
+
+function updateTag(modelName){
+  const tag=g('mtag');if(!tag)return;
+  const m=modelName||'';
+  if(m.includes('turbo')){tag.textContent='TURBO';tag.style.color='var(--green)';}
+  else if(m.includes('sft')){tag.textContent='SFT';tag.style.color='var(--amber)';}
+  else{tag.textContent='BASE';tag.style.color='var(--accent2)';}
+}
+
+async function initService(){
+  const btn=g('btn-svc-init');
+  btn.disabled=true;btn.innerHTML='<span class="sp"></span> Initialisation...';
+  setSt('svc-stat','⏳ Chargement du modèle en cours...','ru');
+  try{
+    const payload={
+      model: g('svc-model').value,
+      slot: 1,
+      init_llm: g('svc-init-llm').checked,
+    };
+    const lm=g('svc-lm').value;
+    if(lm) payload.lm_model_path=lm;
+    const r=await fetch(`${API()}/v1/init`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.code===200){
+      const loaded=d.data?.loaded_model||'';
+      setSt('svc-stat','✓ Initialisé — '+loaded,'ok');
+      updateTag(loaded);
+      notif('Service initialisé — '+loaded,'ok',4000);
+      loadModels();
+    } else {
+      setSt('svc-stat','✗ '+( d.error||'Erreur'),'er');
+      notif('Erreur init: '+(d.error||'voir console'),'er');
+    }
+  }catch(e){
+    setSt('svc-stat','✗ '+e.message,'er');
+    notif('Erreur: '+e.message,'er');
+  }
+  btn.disabled=false;
+  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Initialiser le service';
+}
+
+function onMC(forceDefaults=false){
+  const m=g('svc-model')?.value||'';const tag=g('mtag');
+  const isTurbo=m.includes('turbo');
+  if(forceDefaults){
+    if(isTurbo){
+      tag.textContent='TURBO';tag.style.color='var(--green)';
+      g('asteps').value=8;  g('astv').textContent=8;
+      g('acfg').value=1;    g('acfgv').textContent='1.0';
+      const shift=m.includes('shift3')?3:1;
+      g('ashift').value=shift;g('ashv').textContent=shift+'.0';
+    } else if(m.includes('sft')){
+      tag.textContent='SFT';tag.style.color='var(--amber)';
+      g('asteps').value=50;g('astv').textContent=50;
+      g('acfg').value=7;g('acfgv').textContent='7.0';
+      g('ashift').value=3;g('ashv').textContent='3.0';
+    } else {
+      tag.textContent='BASE';tag.style.color='var(--accent2)';
+      g('asteps').value=60;g('astv').textContent=60;
+      g('acfg').value=10;g('acfgv').textContent='10.0';
+      g('ashift').value=1;g('ashv').textContent='1.0';
+    }
+  } else {
+    // Juste mettre à jour le tag sans toucher aux sliders
+    if(isTurbo){tag.textContent='TURBO';tag.style.color='var(--green)';}
+    else if(m.includes('sft')){tag.textContent='SFT';tag.style.color='var(--amber)';}
+    else{tag.textContent='BASE';tag.style.color='var(--accent2)';}
+  }
+  // Grey out CFG/shift/ADG/cfg_interval for turbo — these params are not sent
+  // CFG/shift/ADG toujours accessibles quel que soit le modèle
+  ['acfg','ashift','aadg','acfgstart','acfgend'].forEach(id=>{
+    const el=g(id);if(el){
+      el.disabled=false;
+      const parent=el.closest('.fld')||el.closest('.tr')||el.closest('.g2');
+      if(parent)parent.style.opacity='1';
+    }
+  });
+  const cfgRow=g('acfgstart')?.closest('.g2');if(cfgRow)cfgRow.style.opacity='1';
+}
+
+// CONFIG PERSISTANCE
+const CFG_KEY = 'acestep-studio-config';
+const CFG_FIELDS = [
+  // text/select
+  {id:'apiurl',   type:'val'},
+  {id:'svc-model', type:'val'},
+  {id:'svc-lm',    type:'val'},
+  {id:'compose-lang', type:'val'},
+  {id:'ainfer',   type:'val'},
+  {id:'alm-model',type:'val'},
+  {id:'afmt',     type:'val'},
+  {id:'aneg',     type:'val'},
+  // ranges
+  {id:'asteps',   type:'val'},
+  {id:'acfg',     type:'val'},
+  {id:'ashift',   type:'val'},
+  {id:'altemp',   type:'val'},
+  {id:'alcfg',    type:'val'},
+  {id:'atopk',    type:'val'},
+  {id:'atopp',    type:'val'},
+  {id:'acfgstart',type:'val'},
+  {id:'acfgend',  type:'val'},
+  // checkboxes
+  {id:'compose-think', type:'chk'},
+  {id:'auto-analyze',  type:'chk'},
+  {id:'acotm', type:'chk'},
+  {id:'acotc', type:'chk'},
+  {id:'acotl', type:'chk'},
+  {id:'acd',   type:'chk'},
+  {id:'arseed',type:'chk'},
+  {id:'aadg',  type:'chk'},
+  // cover
+  {id:'rstr',   type:'val'},
+  {id:'rcnstr', type:'val'},
+  {id:'rlang',  type:'val'},
+  {id:'rkey',   type:'val'},
+  {id:'rtimesig',type:'val'},
+  {id:'rpmode', type:'val'},
+  {id:'rpstr',  type:'val'},
+  {id:'rplang', type:'val'},
+  {id:'rppbpm', type:'val'},
+  {id:'rppdur', type:'val'},
+  {id:'rppkey', type:'val'},
+  {id:'rpptimesig', type:'val'},
+  {id:'bslang',  type:'val'},
+  {id:'bsbpm',   type:'val'},
+  {id:'bsdur',   type:'val'},
+  {id:'bskey',   type:'val'},
+  {id:'bstimesig',type:'val'},
+  {id:'bsmode',  type:'val'},
+  {id:'bsstr',   type:'val'},
+  {id:'bsacs',   type:'val'},
+];
+
+function saveConfig() {
+  const cfg = {};
+  CFG_FIELDS.forEach(f => {
+    const el = g(f.id); if (!el) return;
+    cfg[f.id] = f.type === 'chk' ? el.checked : el.value;
+  });
+  localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+}
+
+function loadConfig() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
+    CFG_FIELDS.forEach(f => {
+      const el = g(f.id); if (!el || cfg[f.id] === undefined) return;
+      if (f.type === 'chk') el.checked = cfg[f.id];
+      else el.value = cfg[f.id];
+    });
+    // Mettre à jour les labels des sliders
+    const sliders = {
+      asteps:'astv', acfg:'acfgv', ashift:'ashv', altemp:'altv',
+      alcfg:'alcv', atopk:'atkv', atopp:'atpv', acfgstart:'acfgsv', acfgend:'acfgev'
+    };
+    Object.entries(sliders).forEach(([sid, lid]) => {
+      const el = g(sid); const lbl = g(lid);
+      if (el && lbl) lbl.textContent = parseFloat(el.value).toFixed(el.step?.includes('.')? el.step.split('.')[1].length : 0) || el.value;
+    });
+  } catch(e) { console.warn('loadConfig error:', e); }
+}
+
+// Sauvegarder à chaque changement des champs de config
+CFG_FIELDS.forEach(f => {
+  const el = g(f.id); if (!el) return;
+  el.addEventListener('change', saveConfig);
+  el.addEventListener('input', saveConfig);
+});
+
+setInterval(updStats,12000);
+const hasSavedConfig = !!localStorage.getItem(CFG_KEY);
+if(!hasSavedConfig) onMC(true); else { loadConfig(); onMC(false); }
+checkServer();
+
+// ADVANCED PARAMS
+function adv(){
+  return{
+    inference_steps:parseInt(g('asteps').value),
+    guidance_scale:parseFloat(g('acfg').value),
+    shift:parseFloat(g('ashift').value),
+    infer_method:g('ainfer').value,
+    use_adg:g('aadg').checked,
+    cfg_interval_start:parseFloat(g('acfgstart').value),
+    cfg_interval_end:parseFloat(g('acfgend').value),
+    lm_model_path:g('alm-model').value||null,
+    lm_temperature:parseFloat(g('altemp').value),
+    lm_cfg_scale:parseFloat(g('alcfg').value),
+    lm_top_k:parseInt(g('atopk').value),
+    lm_top_p:parseFloat(g('atopp').value),
+    lm_negative_prompt:g('aneg').value,
+    use_cot_metas:g('acotm').checked,
+    use_cot_caption:g('acotc').checked,
+    use_cot_language:g('acotl').checked,
+    constrained_decoding:g('acd').checked,
+    use_random_seed:g('arseed').checked,
+    audio_format:g('afmt').value,
+    timesteps:g('atimesteps').value.trim()||null,
+    seeds:g('aseeds').value.trim()||null
+  }
+}
+
+function buildFD(thinking,batch,model){
+  const fd=new FormData();const a=adv();
+  fd.append('thinking',thinking?'true':'false');
+  fd.append('batch_size',batch);
+  fd.append('inference_steps',a.inference_steps);
+  const isTurbo=(model||'').includes('turbo');
+  // CFG, shift, ADG et cfg_interval sont ignorés/nocifs pour turbo — uniquement base/sft
+  if(!isTurbo){
+    fd.append('guidance_scale',a.guidance_scale);
+    fd.append('shift',a.shift);
+    fd.append('use_adg',a.use_adg);
+    fd.append('cfg_interval_start',a.cfg_interval_start);
+    fd.append('cfg_interval_end',a.cfg_interval_end);
+  }
+  fd.append('infer_method',a.infer_method);
+  fd.append('lm_temperature',a.lm_temperature);
+  fd.append('lm_cfg_scale',a.lm_cfg_scale);
+  fd.append('lm_top_k',a.lm_top_k);
+  fd.append('lm_top_p',a.lm_top_p);
+  fd.append('lm_negative_prompt',a.lm_negative_prompt);
+  fd.append('use_cot_metas',a.use_cot_metas);
+  fd.append('use_cot_caption',a.use_cot_caption);
+  fd.append('use_cot_language',a.use_cot_language);
+  fd.append('constrained_decoding',a.constrained_decoding);
+  fd.append('use_random_seed',a.use_random_seed);
+  fd.append('audio_format',a.audio_format);
+  if(a.timesteps)fd.append('timesteps',a.timesteps);
+  if(!a.use_random_seed&&a.seeds){
+    // Envoyer tous les seeds — le serveur les distribue par variation
+    const seedList=a.seeds.split(',').map(s=>s.trim()).filter(Boolean);
+    seedList.forEach(s=>fd.append('seed',s));
+  }
+  if(model)fd.append('model',model);
+  if(a.lm_model_path)fd.append('lm_model_path',a.lm_model_path);
+  return fd;
+}
+
+// Global thinking toggle — lit compose-think SAUF pour les tâches qui ignorent le LM
+function isThinking(taskType){ 
+  // La doc indique que cover, repaint et extract ignorent toujours le LM
+  if(taskType==='cover'||taskType==='repaint'||taskType==='extract') return false;
+  // Si LM non initialisé, thinking impossible
+  if(!(g('svc-init-llm')?.checked ?? true)) return false;
+  return g('compose-think')?.checked ?? false; 
+}
+
+let _thinkingBeforeLmDisable = false;
+function updateThinkingState(){
+  const llmEnabled = g('svc-init-llm')?.checked ?? true;
+  const thinkEl = g('compose-think');
+  const thinkRow = thinkEl?.closest('.tr') || thinkEl?.closest('.fld');
+  if(thinkEl){
+    if(!llmEnabled){
+      _thinkingBeforeLmDisable = thinkEl.checked;
+      thinkEl.checked = false;
+    } else {
+      thinkEl.checked = _thinkingBeforeLmDisable;
+    }
+    thinkEl.disabled = !llmEnabled;
+    const sw = thinkEl.closest('.sw');
+    if(sw) sw.style.pointerEvents = llmEnabled ? '' : 'none';
+    if(thinkRow) thinkRow.style.opacity = llmEnabled ? '1' : '.35';
+  }
+}
+
+async function submit(fd){
+  // DEBUG — affiche tous les params envoyés
+  console.log('[submit] params:', Object.fromEntries(fd.entries()));
+  const r=await fetch(`${API()}/release_task`,{method:'POST',body:fd});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const d=await r.json();
+  if(d.code!==200)throw new Error(d.error||'Erreur API');
+  return d.data.task_id;
+}
+
+function pollPhase(elapsed){
+  return '⏳ En cours... (' + elapsed + 's)';
+}
+
+function poll(tid, onDone, onFail, onProgress){
+  let elapsed=0;
+  const iv=setInterval(async()=>{
+    elapsed+=2;
+    if(onProgress) onProgress(pollPhase(elapsed), elapsed);
+    try{
+      const r=await fetch(`${API()}/query_result`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task_id_list:[tid]})});
+      const d=await r.json();const t=d.data[0];
+      if(t.status===1){clearInterval(iv);onDone(JSON.parse(t.result))}
+      else if(t.status===2){clearInterval(iv);onFail('Échec de génération')}
+      else if(elapsed>900){clearInterval(iv);onFail('Timeout')}
+    }catch(e){clearInterval(iv);onFail(e.message)}
+  },2000);
+}
+
+function onDone(results,label){
+  hideES();
+  results.forEach((info,i)=>{
+    const raw = info.file||info.url||'';
+    const url = raw.startsWith('data:') || raw.startsWith('blob:') ? raw : `${API()}${raw}`;
+    const seed=info.seed_value||'';
+    const bpm=info.metas?.bpm?`${info.metas.bpm} BPM`:'';
+    const key=info.metas?.keyscale||'';
+    const dur=info.metas?.duration?`${Math.round(info.metas.duration)}s`:'';
+    addTrack(url,`${label} #${i+1}`,seed,[bpm,key,dur].filter(Boolean));
+  });
+  updStats();
+}
+
+function hideES(){const e=g('es');if(e)e.style.display='none'}
+
+function btnState(id,loading,label){
+  const b=g(id);if(!b)return;
+  b.disabled=loading;
+  if(loading){b.innerHTML='<span class="sp"></span> En cours...'}
+  else{b.innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.5 12.5H11L9 22L19.5 11H13Z"/></svg>${label||'Générer'}`}
+}
+
+// ═══ COMPOSE MODE ═══
+
+
+async function runLM(forceRegen = false) {
+  const q = g('insp-desc').value.trim();
+  if (!q) { notif('Entrez une description', 'er'); return; }
+  const btn = g('btn-lm');
+  const btnFull = g('btn-lm-full');
+  btn.disabled = true; btnFull.disabled = true;
+  g('btn-gen-compose').disabled = true; g('btn-format').disabled = true; g('btn-format-lyr').disabled = true;
+  btn.innerHTML = '<span class="sp"></span> LM en cours...';
+  if (forceRegen) window.resetMeta();
+  try {
+    const fd = new FormData();
+    fd.append('sample_mode', 'true');
+    fd.append('sample_query', q);
+    fd.append('thinking', 'false');
+    fd.append('batch_size', '1');
+    fd.append('audio_format', 'mp3');
+    fd.append('inference_steps', '1');
+    fd.append('audio_duration', '10');
+    const lang = g('compose-lang').value;
+    if (lang && lang !== 'unknown') fd.append('vocal_language', lang);
+    if (g('compose-instr').checked) fd.append('instrumental', 'true');
+    if (g('compose-bpm').value) fd.append('bpm', g('compose-bpm').value);
+    if (g('compose-key').value) fd.append('key_scale', g('compose-key').value);
+    if (g('compose-timesig').value) fd.append('time_signature', g('compose-timesig').value);
+    if (g('compose-dur').value && g('compose-dur').value != -1) fd.append('audio_duration', g('compose-dur').value);
+    const lmModel = g('alm-model').value;
+    if (lmModel) fd.append('lm_model_path', lmModel);
+    fd.append('model', g('svc-model').value);
+    const tid = await submit(fd);
+    poll(tid, (results) => {
+      const info = results[0];
+      console.log('[runLM] result:', JSON.stringify(info));
+      const cap = info.prompt || info.caption || '';
+      const lyr = info.lyrics || '';
+      if (cap) g('compose-cap').value = cap;
+      if (lyr && lyr !== '[Instrumental]') g('compose-lyr').value = lyr;
+      if (info.metas?.bpm && !g('compose-bpm').value)       g('compose-bpm').value = info.metas.bpm;
+      const newKey = info.metas?.keyscale || info.metas?.key_scale || null;
+      if (newKey && !g('compose-key').value)                setKeySelect(newKey);
+      const newDur = info.metas?.duration || null;
+      if (newDur && (!g('compose-dur').value || g('compose-dur').value == -1)) g('compose-dur').value = Math.round(newDur);
+      const newTs = info.metas?.timesignature || info.metas?.time_signature || null;
+      if (newTs && !g('compose-timesig').value)             g('compose-timesig').value = newTs;
+      const detectedLang = info.metas?.vocal_language || info.vocal_language || null;
+      const sel = g('compose-lang');
+      if (detectedLang && detectedLang !== 'unknown' && sel.value === 'unknown') {
+        if ([...sel.options].some(o => o.value === detectedLang)) sel.value = detectedLang;
+      }
+      clearStale();
+      notif('Caption et paroles générées — éditez si besoin', 'ok', 4500);
+      btn.disabled = false; btn.innerHTML = '✦ Générer via LM';
+      btnFull.disabled = false;
+      g('btn-gen-compose').disabled = false; g('btn-format').disabled = false; g('btn-format-lyr').disabled = false;
+    }, (err) => {
+      notif('Erreur: ' + err, 'er');
+      btn.disabled = false; btn.innerHTML = '✦ Générer via LM';
+      btnFull.disabled = false;
+      g('btn-gen-compose').disabled = false; g('btn-format').disabled = false; g('btn-format-lyr').disabled = false;
+    }, (msg) => { btn.innerHTML = '<span class="sp"></span> ' + msg; });
+  } catch(e) {
+    notif('Erreur: ' + e.message, 'er');
+    btn.disabled = false; btn.innerHTML = '✦ Générer via LM';
+    btnFull.disabled = false;
+    g('btn-gen-compose').disabled = false; g('btn-format').disabled = false; g('btn-format-lyr').disabled = false;
+  }
+}
+async function runFormat() {
+  const cap = g('compose-cap').value.trim();
+  const lyr = g('compose-lyr').value.trim();
+  if (!cap && !lyr) { notif('Entrez caption ou paroles d\'abord', 'er'); return; }
+  const btn = g('btn-format'); btn.textContent = '⏳...'; btn.disabled = true;
+  const fmtBtns = ['btn-gen-compose','btn-lm','btn-lm-full','btn-format-lyr'];
+  fmtBtns.forEach(id => { const el=g(id); if(el) el.disabled=true; });
+  const unblockFmt = () => { fmtBtns.forEach(id => { const el=g(id); if(el) el.disabled=false; }); btn.textContent = '✦ Format via LM'; btn.disabled = false; };
+  try {
+    const meta = {};
+    if (g('compose-bpm').value) meta.bpm = parseInt(g('compose-bpm').value);
+    const lang = g('compose-lang').value;
+    if (lang && lang !== 'unknown') meta.language = lang;
+    const r = await fetch(`${API()}/format_input`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: cap,
+        lyrics: lyr,
+        temperature: parseFloat(g('altemp').value),
+        param_obj: JSON.stringify(meta),
+        instruction: 'Format the user\'s input into a more detailed and specific musical description'
+      })
+    });
+    const d = await r.json();
+    console.log('[format_input] response:', JSON.stringify(d.data));
+    if (d.code === 200 && d.data) {
+      // API may return caption as "caption" or "prompt" depending on version
+      const newCap = d.data.caption || d.data.prompt || d.data.style || null;
+      if (newCap)              g('compose-cap').value = newCap;
+      if (d.data.lyrics)       g('compose-lyr').value = d.data.lyrics;
+      if (d.data.bpm && !g('compose-bpm').value)          g('compose-bpm').value = d.data.bpm;
+      const newKey = d.data.key_scale || d.data.keyscale || d.data.key || null;
+      if (newKey && !g('compose-key').value)              setKeySelect(newKey);
+      const newDur = d.data.duration || d.data.audio_duration || null;
+      if (newDur && (!g('compose-dur').value || g('compose-dur').value == -1)) g('compose-dur').value = Math.round(newDur);
+      const newTs = d.data.time_signature || d.data.timesignature || null;
+      if (newTs && !g('compose-timesig').value)           g('compose-timesig').value = newTs;
+      if (d.data.vocal_language && d.data.vocal_language !== 'unknown') {
+        const sel = g('compose-lang');
+        if (sel.value === 'unknown') {
+          if ([...sel.options].some(o => o.value === d.data.vocal_language)) sel.value = d.data.vocal_language;
+        }
+      }
+      const changed = [newCap && 'caption', d.data.lyrics && 'paroles', newKey && 'clé', d.data.bpm && 'BPM'].filter(Boolean);
+      notif(changed.length ? `Amélioré : ${changed.join(', ')}` : 'Paroles améliorées (caption inchangée — voir console)', changed.length ? 'ok' : 'ru');
+    } else { notif('Réponse inattendue — voir console', 'er'); console.warn('[format_input] unexpected:', d); }
+  } catch(e) { notif('Erreur: ' + e.message, 'er'); }
+  unblockFmt();
+}
+
+async function runFormatLyrics() {
+  const cap = g('compose-cap').value.trim();
+  const lyr = g('compose-lyr').value.trim();
+  if (!lyr) { notif('Entrez des paroles d\'abord', 'er'); return; }
+  const btn = g('btn-format-lyr'); btn.textContent = '⏳...'; btn.disabled = true;
+  const lyrBtns = ['btn-gen-compose','btn-lm','btn-lm-full','btn-format'];
+  lyrBtns.forEach(id => { const el=g(id); if(el) el.disabled=true; });
+  const unblockLyr = () => { lyrBtns.forEach(id => { const el=g(id); if(el) el.disabled=false; }); btn.textContent = '✦ Enhance'; btn.disabled = false; };
+  try {
+    const meta = {};
+    if (g('compose-bpm').value) meta.bpm = parseInt(g('compose-bpm').value);
+    const lang = g('compose-lang').value;
+    if (lang && lang !== 'unknown') meta.language = lang;
+    const r = await fetch(`${API()}/format_input`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: cap,
+        lyrics: lyr,
+        temperature: parseFloat(g('altemp').value),
+        param_obj: JSON.stringify(meta)
+      })
+    });
+    const d = await r.json();
+    if (d.code === 200 && d.data) {
+      if (d.data.lyrics) { g('compose-lyr').value = d.data.lyrics; notif('Paroles améliorées', 'ok', 3000); }
+      else { notif('Pas de paroles retournées', 'ru'); }
+    } else { notif('Réponse inattendue — voir console', 'er'); }
+  } catch(e) { notif('Erreur: ' + e.message, 'er'); }
+  unblockLyr();
+}
+
+async function genCompose() {
+  const cap = g('compose-cap').value.trim();
+  if (!cap) { notif('Entrez une caption ou utilisez le LM pour en générer une', 'er'); return; }
+  btnState('btn-gen-compose', true);
+  g('btn-lm').disabled = true; g('btn-lm-full').disabled = true;
+  g('btn-format').disabled = true; g('btn-format-lyr').disabled = true;
+  setSt('compose-stat', '⏳ En queue...', 'ru');
+  progAnim('compose-prog', true);
+  try {
+    const fd = buildFD(isThinking(), g('compose-batch').value, g('svc-model').value);
+    fd.append('prompt', cap);
+    fd.append('lyrics', g('compose-lyr').value || (g('compose-instr').checked ? '[Instrumental]' : ''));
+    fd.append('vocal_language', g('compose-lang').value);
+    fd.append('audio_duration', g('compose-dur').value);
+    if (g('compose-bpm').value)     fd.append('bpm', g('compose-bpm').value);
+    if (g('compose-key').value)     fd.append('key_scale', g('compose-key').value);
+    if (g('compose-timesig').value) fd.append('time_signature', g('compose-timesig').value);
+    if (g('compose-instr').checked) fd.append('instrumental', 'true');
+    if (referenceFile) fd.append('reference_audio', referenceFile);
+    const tid = await submit(fd);
+    setSt('compose-stat', '⏳ ' + tid.slice(0,8) + '...', 'ru');
+    poll(tid, (results) => {
+      progAnim('compose-prog', false);
+      setSt('compose-stat', '✓ ' + results.length + ' piste(s) générée(s)', 'ok');
+      btnState('btn-gen-compose', false, 'Générer'); g('btn-format').disabled = false; g('btn-format-lyr').disabled = false; g('btn-lm').disabled = false; g('btn-lm-full').disabled = false;
+      onDone(results, 'Compose');
+    }, (err) => {
+      progAnim('compose-prog', false);
+      setSt('compose-stat', '✗ ' + err, 'er');
+      btnState('btn-gen-compose', false, 'Générer'); g('btn-format').disabled = false; g('btn-format-lyr').disabled = false; g('btn-lm').disabled = false; g('btn-lm-full').disabled = false;
+    }, (msg) => setSt('compose-stat', msg, 'ru'));
+  } catch(e) {
+    progAnim('compose-prog', false);
+    setSt('compose-stat', '✗ ' + e.message, 'er');
+    btnState('btn-gen-compose', false, 'Générer'); g('btn-format').disabled = false; g('btn-format-lyr').disabled = false; g('btn-lm').disabled = false; g('btn-lm-full').disabled = false;
+  }
+}
+
+// ═══ REMIX ═══
+// Global source file handler
+function isAutoAnalyze() { return g('auto-analyze')?.checked ?? true; }
+
+function setSrcGlobal(f, label) {
+  remixFile = f; repaintFile = f; baseFile = f;
+  const name = label || f.name;
+  g('global-src-name').textContent = name;
+  g('global-src-name').style.color = 'var(--accent2)';
+  g('global-src-clear').style.display = '';
+  g('btn-src-to-ref').style.display = '';
+  // Update info blocks in panels
+  const info = `Source : ${name}`;
+  ['repaint-src-info','base-src-info','cover-src-info'].forEach(id => {
+    const el = g(id); if(el) { el.textContent = info; el.style.color = 'var(--accent2)'; }
+  });
+  if (isAutoAnalyze()) {
+    setTimeout(() => analyzeSrc(), 300);
+    g('btn-analyze-manual').style.display = 'none';
+  } else {
+    g('btn-analyze-manual').style.display = '';
+  }
+}
+
+function onSrcFile(e) {
+  const f = e.target.files[0]; if(!f) return;
+  setSrcGlobal(f, f.name);
+  // Always enable regions so Repaint and Lego time selection works
+  addTrack(URL.createObjectURL(f), f.name, '', [], true);
+  // Mark the first track (just added) as source visually
+  setTimeout(()=>{
+    const t=T[0];if(!t)return;
+    const tn=g('tn'+t.id);const btn=g('srcbtn'+t.id);
+    if(tn){tn.textContent='[SRC] '+f.name;tn.style.color='var(--accent2)'}
+    if(btn){btn.textContent='✓ SRC';btn.classList.add('active')}
+  },50);
+}
+
+window.clrSrc = () => {
+  remixFile = null; repaintFile = null; baseFile = null;
+  g('global-src-name').textContent = 'aucune';
+  g('global-src-name').style.color = 'var(--t3)';
+  g('global-src-clear').style.display = 'none';
+  g('btn-src-to-ref').style.display = 'none';
+  g('btn-src-to-ref').textContent = '→ Réf';
+  g('btn-src-to-ref').classList.remove('ac');
+  g('btn-analyze-manual').style.display = 'none';
+  g('btn-analyze').style.display = 'none';
+  g('btn-analyze').textContent = '🔍 —';
+  // Réinitialiser les métadonnées issues de l'analyse pour la prochaine source
+  g('compose-bpm').value = '';
+  g('compose-key').value = '';
+  g('compose-timesig').value = '';
+  g('compose-dur').value = '-1';
+  clearStale();
+  g('rbpm').value = '';
+  g('rdur').value = '-1';
+  ['repaint-src-info','base-src-info','cover-src-info'].forEach(id => {
+    const el = g(id); if(el) { el.textContent = 'Utilisez le bouton SRC dans la barre de transport'; el.style.color = 'var(--t2)'; }
+  });
+};
+
+// Keep old names as aliases for drag-drop
+window.onRemixFile = e => onSrcFile(e);
+window.ev = e => e.preventDefault();
+window.dropRemix = e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if(f?.type.startsWith('audio/')) setSrcGlobal(f, f.name); };
+
+// Envoyer la source comme référence audio dans Compose
+function srcToRef() {
+  if (!remixFile) return;
+  referenceFile = remixFile;
+  g('ref-sd').className = 'sd on';
+  g('ref-sn').textContent = remixFile.name;
+  const btn = g('btn-src-to-ref');
+  btn.textContent = '✓ Réf'; btn.classList.add('ac');
+  if (isAutoAnalyze()) {
+    g('btn-ref-analyze-manual').style.display='none';
+    markStale();
+    analyzeSrc(remixFile);
+    notif('"' + remixFile.name + '" → référence — analyse en cours, Générer via LM requis ensuite', 'ru', 5000);
+  } else {
+    g('btn-ref-analyze-manual').style.display='';
+    notif('"' + remixFile.name + '" → référence audio', 'ok', 2500);
+  }
+}
+
+// Positionne un audio dans un buffer silence de durée totalDur, à partir de offsetSec
+async function padAudioToPosition(url, offsetSec, totalDur) {
+  const ctx = new AudioContext();
+  // Charger la piste générée
+  const resp = await fetch(url);
+  const arrayBuf = await resp.arrayBuffer();
+  const srcBuf = await ctx.decodeAudioData(arrayBuf);
+  const sr = srcBuf.sampleRate;
+  const channels = srcBuf.numberOfChannels;
+  const totalSamples = Math.round(totalDur * sr);
+  const offsetSamples = Math.round(offsetSec * sr);
+  // Créer buffer silence de la durée totale
+  const outBuf = ctx.createBuffer(channels, totalSamples, sr);
+  for(let c = 0; c < channels; c++){
+    const outData = outBuf.getChannelData(c);
+    const srcData = srcBuf.getChannelData(c);
+    const copyLen = Math.min(srcData.length, totalSamples - offsetSamples);
+    if(copyLen > 0) outData.set(srcData.subarray(0, copyLen), offsetSamples);
+  }
+  await ctx.close();
+  // Convertir en blob WAV
+  const wavBlob = audioBufferToWav(outBuf);
+  return URL.createObjectURL(wavBlob);
+}
+
+// Encoder AudioBuffer en WAV
+function audioBufferToWav(buffer) {
+  const numCh = buffer.numberOfChannels;
+  const sr = buffer.sampleRate;
+  const numFrames = buffer.length;
+  const bytesPerSample = 2;
+  const dataSize = numFrames * numCh * bytesPerSample;
+  const arrayBuf = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(arrayBuf);
+  const writeStr = (off, s) => { for(let i=0;i<s.length;i++) view.setUint8(off+i, s.charCodeAt(i)); };
+  writeStr(0,'RIFF'); view.setUint32(4, 36+dataSize, true);
+  writeStr(8,'WAVE'); writeStr(12,'fmt ');
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+  view.setUint16(22, numCh, true); view.setUint32(24, sr, true);
+  view.setUint32(28, sr*numCh*bytesPerSample, true);
+  view.setUint16(32, numCh*bytesPerSample, true); view.setUint16(34, 16, true);
+  writeStr(36,'data'); view.setUint32(40, dataSize, true);
+  let off = 44;
+  for(let i=0; i<numFrames; i++){
+    for(let c=0; c<numCh; c++){
+      const s = Math.max(-1, Math.min(1, buffer.getChannelData(c)[i]));
+      view.setInt16(off, s<0 ? s*0x8000 : s*0x7FFF, true);
+      off += 2;
+    }
+  }
+  return new Blob([arrayBuf], {type:'audio/wav'});
+}
+function getAudioDuration(file) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const a = new Audio();
+    a.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(Math.round(a.duration)); };
+    a.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    a.src = url;
+  });
+}
+
+async function analyzeSrc(fileOverride) {
+  const file = fileOverride || remixFile;
+  if (!file) return;
+  const btn = g('btn-analyze');
+  btn.style.display = '';
+  btn.textContent = '🔍 Analyse...';
+  // Bloquer tous les boutons de génération pendant l'analyse
+  const genBtns = ['btn-gen-compose','btn-lm','btn-lm-full','btn-format','btn-format-lyr','bgr','bgrp','bgbs'];
+  genBtns.forEach(id => { const el=g(id); if(el) el.disabled=true; });
+  const unblock = () => genBtns.forEach(id => { const el=g(id); if(el) el.disabled=false; });
+  try {
+    const fd = new FormData();
+    fd.append('task_type', 'text2music');
+    fd.append('src_audio', file);
+    fd.append('prompt', 'analyze this audio');
+    fd.append('thinking', 'true');
+    fd.append('use_cot_metas', 'true');
+    fd.append('use_cot_caption', 'true');
+    fd.append('batch_size', '1');
+    fd.append('audio_format', 'mp3');
+    const lmModel = g('alm-model').value;
+    if (lmModel) fd.append('lm_model_path', lmModel);
+    const tid = await submit(fd);
+    poll(tid, (results) => {
+      const info = results[0];
+      console.log('[analyzeSrc] result:', JSON.stringify(info));
+      const m = info.metas || {};
+      const detected = [];
+      if (m.bpm) {
+        detected.push(m.bpm + ' BPM');
+        g('rbpm').value = m.bpm;
+        g('compose-bpm').value = m.bpm;
+        if(g('rppbpm')) g('rppbpm').value = m.bpm;
+        if(g('bsbpm')) g('bsbpm').value = m.bpm;
+      }
+      // Durée réelle lue depuis le fichier, pas depuis le LM
+      getAudioDuration(file).then(realDur => {
+        if (realDur) {
+          g('rdur').value = realDur;
+          g('compose-dur').value = realDur;
+          if(g('rppdur')) g('rppdur').value = realDur;
+          if(g('bsdur')) g('bsdur').value = realDur;
+          detected.push(realDur + 's');
+        }
+        const key = m.keyscale || m.key_scale || null;
+        if (key) {
+          const normalized = key.replace(/^([a-g]#?b?)\s*(major|minor)$/i, (_, note, mode) =>
+            note.charAt(0).toUpperCase() + note.slice(1).toLowerCase() + ' ' +
+            (mode.toLowerCase() === 'major' ? 'Major' : 'minor')
+          ) || key;
+          detected.push(normalized);
+          setKeySelect(normalized);
+        }
+        const ts = m.timesignature || m.time_signature || null;
+        if (ts) { g('compose-timesig').value = ts; if(g('rtimesig'))g('rtimesig').value = ts; if(g('rpptimesig'))g('rpptimesig').value = ts; if(g('bstimesig'))g('bstimesig').value = ts; }
+        if (key) { if(g('rkey')) g('rkey').value = g('compose-key').value; if(g('rppkey')) g('rppkey').value = g('compose-key').value; if(g('bskey')) g('bskey').value = g('compose-key').value; }
+        const cap = info.prompt || info.caption || '';
+        // Ne pas remplir rcap automatiquement — l'utilisateur doit entrer le style cible manuellement
+        btn.textContent = detected.length ? '🔍 ' + detected.join(' · ') : '🔍 OK';
+        if (detected.length) notif('Source analysée — ' + detected.join(' · '), 'ok', 5000);
+        if (fileOverride) markStale();
+        unblock();
+      });
+    }, (err) => {
+      btn.textContent = '🔍 —';
+      notif('Analyse échouée: ' + err, 'er');
+      unblock();
+    }, (msg) => { btn.textContent = msg; });
+  } catch(e) {
+    btn.textContent = '🔍 —';
+    notif('Erreur analyse: ' + e.message, 'er');
+    unblock();
+  }
+}
+
+// ═══ REPAINT ═══
+function onRepaintFile(e){
+  const f=e.target.files[0];if(!f)return;
+  setSrcGlobal(f, f.name);
+  g('rpinfo').textContent='Source chargée — dessinez une région dans le timeline';
+  addTrack(URL.createObjectURL(f),'REPAINT SRC: '+f.name,'','',true);
+}
+window.clrRepaint=()=>window.clrSrc();
+
+// ═══ TRACKS ═══
+function addTrack(url,label,seed,pills,isRepaint=false){
+  hideES();
+  const id='t'+Date.now()+Math.random().toString(36).slice(2,5);
+  const div=document.createElement('div');
+  div.className='tc';div.id='c'+id;
+  const pillsH=(Array.isArray(pills)?pills:[]).filter(Boolean).map(p=>`<span class="mp ac">${p}</span>`).join('');
+  const seedH=seed?`<span class="mp">seed ${seed}</span>`:'';
+  div.innerHTML=`
+    <div class="th">
+      <div style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+        <button class="sm" id="mb${id}" onclick="tMute('${id}')">M</button>
+        <button class="sm" id="sb${id}" onclick="tSolo('${id}')">S</button>
+        <input type="range" min="0" max="1" step="0.05" value="1" style="width:46px;accent-color:var(--accent)" oninput="tVol('${id}',parseFloat(this.value))">
+        <button class="sm ac" id="srcbtn${id}" onclick="setSrc('${id}','${url}','${label}')">→ SRC</button>
+        <button class="sm" onclick="dlTrack('${url}','${label}')">DL</button>
+        <button class="sm dn" onclick="rmTrack('${id}')">✕</button>
+      </div>
+      <span class="tn" id="tn${id}">${label}</span>
+    </div>
+    <div class="tw" id="w${id}"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 10px 6px">
+      <div class="tm" style="padding:0">${pillsH}${seedH}</div>
+      <span style="font-size:9px;font-family:var(--mono);color:var(--t3)">glisser → sélection · double-clic → effacer</span>
+    </div>
+  `;
+  g('tarea').prepend(div);
+
+  const ws=WaveSurfer.create({container:'#w'+id,waveColor:'rgba(124,106,255,.45)',progressColor:'rgba(165,147,255,.85)',height:50,barWidth:2,barGap:1,barRadius:2});
+  const reg=ws.registerPlugin(WaveSurfer.Regions.create());
+
+  // Enable drag-to-select regions on all tracks (used by Repaint and Lego)
+  ws.on('ready',()=>reg.enableDragSelection({color:'rgba(124,106,255,.18)'}));
+  const upd=r=>{
+    const s=r.start.toFixed(1);const e=r.end.toFixed(1);
+    const rs=g('rpstart');const re=g('rpend');const ri=g('rpinfo');
+    if(rs)rs.value=s;if(re)re.value=e;
+    if(ri)ri.textContent=`Sélection: ${s}s → ${e}s — double-clic sur la région pour effacer`;
+    const bs=g('bsstart');const be=g('bsend');
+    if(bs)bs.value=s;if(be)be.value=e;
+  };
+  const clearRegion=()=>{
+    reg.getRegions().forEach(r=>r.remove());
+    const ri=g('rpinfo');if(ri)ri.textContent='Dessinez une région sur la piste pour définir la sélection';
+    const rs=g('rpstart');const re=g('rpend');if(rs)rs.value=0;if(re)re.value=-1;
+    const bs=g('bsstart');const be=g('bsend');if(bs)bs.value=0;if(be)be.value=-1;
+  };
+  reg.on('region-created',r=>{
+    reg.getRegions().forEach(x=>{if(x!==r)x.remove()});
+    upd(r);
+    r.on('update', ()=>upd(r));
+    r.on('dblclick',()=>{ r.remove(); clearRegion(); });
+  });
+  reg.on('region-creating',r=>upd(r));
+  reg.on('region-updated',r=>upd(r));
+  // Click on waveform outside region = clear selection
+  ws.on('interaction',()=>{ if(!reg.getRegions().length) clearRegion(); });
+
+  ws.on('audioprocess',()=>{g('ttime').textContent=fmt(ws.getCurrentTime());g('tlbl').textContent=label});
+  ws.load(url);
+  T.push({id,ws,muted:false,solo:false,vol:1});
+  mixerUpd();
+}
+
+window.rmTrack=id=>{
+  // Check if it's the source track BEFORE removing from DOM
+  const tn=g('tn'+id);
+  const wasSrc=tn?.textContent?.startsWith('[SRC]');
+  const i=T.findIndex(t=>t.id===id);
+  if(i>-1){T[i].ws.destroy();T.splice(i,1)}
+  const c=g('c'+id);if(c)c.remove();
+  if(wasSrc) window.clrSrc();
+  mixerUpd();
+  if(!T.length){g('tarea').innerHTML='<div id="es" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--t3)"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><p style="font-size:12px;text-align:center;max-width:200px;line-height:1.6">Générez de la musique pour voir les pistes ici</p></div>'}
+}
+window.tMute=id=>{const t=T.find(x=>x.id===id);if(t){t.muted=!t.muted;mixerUpd()}}
+window.tSolo=id=>{const tgt=T.find(x=>x.id===id);if(!tgt)return;const was=tgt.solo;T.forEach(t=>t.solo=false);tgt.solo=!was;mixerUpd()}
+window.tVol=(id,v)=>{const t=T.find(x=>x.id===id);if(t){t.vol=v;mixerUpd()}}
+
+function mixerUpd(){
+  const any=T.some(t=>t.solo);
+  T.forEach(t=>{
+    const sil=any?!t.solo:t.muted;
+    t.ws.setVolume(sil?0:t.vol);
+    const c=g('c'+t.id);if(c){c.classList.toggle('mt',sil);c.classList.toggle('sl',t.solo)}
+    const mb=g('mb'+t.id);if(mb){mb.classList.toggle('dn',t.muted&&!any);mb.classList.toggle('ac',false);}
+    const sb=g('sb'+t.id);if(sb)sb.classList.toggle('ac',t.solo);
+  });
+}
+
+window.setSrc=async(id,url,label)=>{
+  const btn=g('srcbtn'+id);
+  if(btn)btn.innerHTML='<span class="sp"></span>';
+  try{
+    const r=await fetch(url);const b=await r.blob();
+    const fmt=g('afmt')?.value||'mp3';
+    const mime=fmt==='wav'||fmt==='wav32'?'audio/wav':fmt==='flac'?'audio/flac':fmt==='opus'?'audio/ogg':fmt==='aac'?'audio/aac':'audio/mpeg';
+    const ext=fmt==='wav32'?'wav':fmt;
+    const f=new File([b],label.replace(/[^a-z0-9]/gi,'_')+'.'+ext,{type:mime});
+    setSrcGlobal(f, label);
+    // Reset all other source buttons and track names
+    T.forEach(t=>{
+      const ob=g('srcbtn'+t.id);
+      const otn=g('tn'+t.id);
+      if(ob&&t.id!==id){ob.textContent='→ SRC';ob.classList.remove('active')}
+      if(otn&&t.id!==id){otn.textContent=otn.textContent.replace(/^\[SRC\] /,'');otn.style.color=''}
+    });
+    // Mark this track as source
+    const tn=g('tn'+id);
+    const cleanLabel=label.replace(/^\[SRC\] /,'').replace(/^SRC: /,'');
+    if(tn){tn.textContent='[SRC] '+cleanLabel;tn.style.color='var(--accent2)'}
+    if(btn){btn.textContent='✓ SRC';btn.classList.add('active')}
+    notif(`"${label}" → source Cover, Repaint & Base`,'ok');
+  }catch(e){
+    if(btn){btn.textContent='→ SRC';btn.classList.remove('active')}
+    notif('Erreur: '+e.message,'er')
+  }
+}
+
+window.dlTrack=async(url,label)=>{
+  try{
+    const r=await fetch(url);
+    const b=await r.blob();
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);
+    const dlFmt=g('afmt')?.value||'mp3';const dlExt=dlFmt==='wav32'?'wav':dlFmt;
+    a.download=label.replace(/[^a-z0-9]/gi,'_')+'.'+dlExt;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  }catch(e){notif('Erreur DL: '+e.message,'er')}
+}
+
+function tRewind(){
+  T.forEach(t=>{if(t.ws.getDuration()>0)t.ws.setTime(0)});
+  g('ttime').textContent='0:00';
+}
+
+window.onRefFile=e=>{
+  const f=e.target.files[0];if(!f)return;
+  referenceFile=f;g('ref-sd').className='sd on';g('ref-sn').textContent=f.name;
+  if (isAutoAnalyze()) {
+    g('btn-ref-analyze-manual').style.display='none';
+    markStale();
+    analyzeSrc(f);
+    notif('Référence chargée — analyse en cours, Générer via LM requis ensuite', 'ru', 5000);
+  } else {
+    g('btn-ref-analyze-manual').style.display='';
+    notif('"'+f.name+'" → référence audio chargée', 'ok', 2500);
+  }
+};
+window.clrRef=()=>{
+  referenceFile=null;g('ref-sd').className='sd';g('ref-sn').textContent='—';
+  g('btn-ref-analyze-manual').style.display='none';
+  clearStale();
+};
+window.dropRef=e=>{
+  e.preventDefault();const f=e.dataTransfer.files[0];
+  if(f?.type.startsWith('audio/')){
+    referenceFile=f;g('ref-sd').className='sd on';g('ref-sn').textContent=f.name;
+    if (isAutoAnalyze()) {
+      g('btn-ref-analyze-manual').style.display='none';
+      markStale();
+      analyzeSrc(f);
+      notif('Référence chargée — analyse en cours, Générer via LM requis ensuite','ru',5000);
+    } else {
+      g('btn-ref-analyze-manual').style.display='';
+      notif('"'+f.name+'" → référence audio chargée', 'ok', 2500);
+    }
+  }
+};
+
+// Also allow setting reference from timeline via a ref button (future)
+window.setRef=async(url,label)=>{
+  try{
+    const r=await fetch(url);const b=await r.blob();
+    const rFmt=g('afmt')?.value||'mp3';const rMime=rFmt==='wav'||rFmt==='wav32'?'audio/wav':rFmt==='flac'?'audio/flac':rFmt==='opus'?'audio/ogg':rFmt==='aac'?'audio/aac':'audio/mpeg';const rExt=rFmt==='wav32'?'wav':rFmt;
+    referenceFile=new File([b],label.replace(/[^a-z0-9]/gi,'_')+'.'+rExt,{type:rMime});
+    g('ref-sd').className='sd on';g('ref-sn').textContent=label;
+    notif(`"${label}" → référence audio`,'ok');
+  }catch(e){notif('Erreur: '+e.message,'er')}
+};
+
+// TRANSPORT
+function tPlay(){
+  if(!T.length)return;
+  if(!playing){T.forEach(t=>{if(t.ws.getDuration()>0)t.ws.play()});g('bplay').innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';g('bplay').classList.add('pl');playing=true}
+  else{T.forEach(t=>t.ws.pause());g('bplay').innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';g('bplay').classList.remove('pl');playing=false}
+}
+function tStop(){T.forEach(t=>{t.ws.pause();t.ws.setTime(0)});g('bplay').innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';g('bplay').classList.remove('pl');g('ttime').textContent='0:00';playing=false}
+function clearTracks(){T.forEach(t=>t.ws.destroy());T.length=0;window.clrSrc();g('tarea').innerHTML='<div id="es" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--t3)"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><p style="font-size:12px;text-align:center;max-width:200px;line-height:1.6">Générez de la musique pour voir les pistes ici</p></div>';playing=false;g('ttime').textContent='0:00'}
+function fmt(s){return Math.floor(s/60)+':'+(Math.floor(s%60)+'').padStart(2,'0')}
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(e.code==='Space'){e.preventDefault();tPlay()}
+});
+
+// ═══ BASE MODEL: LEGO / EXTRACT / COMPLETE ═══
+const INSTRUMENTS=['vocals','backing_vocals','drums','bass','guitar','keyboard','percussion','strings','synth','fx','brass','woodwinds'];
+let baseMode='lego';
+let selectedInstrs=new Set(['drums']);
+
+// Build instrument grid
+function buildInstrGrid(){
+  const grid=g('instr-grid');
+  grid.innerHTML=INSTRUMENTS.map(i=>`<button class="ib${selectedInstrs.has(i)?' on':''}" id="ib-${i}" onclick="toggleInstr('${i}')">${i}</button>`).join('');
+}
+buildInstrGrid();
+setTimeout(()=>selMode('lego'),0);
+
+window.toggleInstr=function(name){
+  if(baseMode==='extract'||baseMode==='lego'){
+    // Single select
+    selectedInstrs.clear();selectedInstrs.add(name);
+  } else {
+    // Complete: multi-select
+    if(selectedInstrs.has(name))selectedInstrs.delete(name);
+    else selectedInstrs.add(name);
+  }
+  buildInstrGrid();
+};
+
+window.selMode=function(mode){
+  baseMode=mode;
+  document.querySelectorAll('#pan-base .mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
+
+  const isExtract=mode==='extract';
+  const isLego=mode==='lego';
+  const isComplete=mode==='complete';
+
+  // Caption visible for lego + complete, not extract
+  g('base-caption-block').style.display=isExtract?'none':'block';
+  // Interval only for lego
+  g('lego-interval').style.display=isLego?'block':'none';
+  // Complete hint
+  g('complete-hint').style.display=isComplete?'block':'none';
+  // Action label
+  g('instr-action').textContent=isExtract?'isoler':isComplete?'ajouter (multi)':'ajouter';
+  // Button label
+  g('bgbs-lbl').textContent=isExtract?'Extraire':isComplete?'Compléter':'Ajouter piste';
+
+  // Mode+Strength pour lego uniquement, Cover Strength pour complete
+  const modeStrRow = g('bs-mode-strength');
+  if(modeStrRow) modeStrRow.style.display = (isLego) ? '' : 'none';
+  const coverStrRow = g('bs-cover-strength');
+  if(coverStrRow) coverStrRow.style.display = isComplete ? '' : 'none';
+  // Cacher ref/meta/mode pour extract
+  const baseExtra = g('base-extra');
+  if(baseExtra) baseExtra.style.display = isExtract ? 'none' : '';
+  if(!isComplete&&selectedInstrs.size>1){
+    const first=[...selectedInstrs][0];selectedInstrs.clear();selectedInstrs.add(first);
+  }
+  buildInstrGrid();
+};
+
+window.onBaseFile=e=>onSrcFile(e);
+window.clrBase=()=>window.clrSrc();
+
+async function genRemix(){
+  if(!remixFile){notif('Chargez une source audio via le transport (bouton SRC)','er');return}
+  btnState('bgr',true,'Cover / Remix');setSt('rstat','⏳ En queue...','ru');progAnim('rprog',true);
+  try{
+    const cap=g('rcap').value.trim();
+    const fd=buildFD(isThinking('cover'),g('rbatch').value,g('svc-model').value);
+    fd.append('task_type','cover');
+    fd.append('prompt',cap);
+    fd.append('lyrics',g('rlyr').value||'');
+    fd.append('audio_cover_strength',g('rstr').value);
+    fd.append('cover_noise_strength',g('rcnstr').value);
+    fd.append('ctx_audio',remixFile);
+    fd.append('vocal_language',g('rlang').value||'unknown');
+    if(coverRefFile) fd.append('reference_audio',coverRefFile);
+    if(g('rbpm').value)fd.append('bpm',g('rbpm').value);
+    if(g('rdur').value && g('rdur').value != -1)fd.append('audio_duration',g('rdur').value);
+    if(g('rkey').value)fd.append('key_scale',g('rkey').value);
+    if(g('rtimesig').value)fd.append('time_signature',g('rtimesig').value);
+    const tid=await submit(fd);setSt('rstat','⏳ '+tid.slice(0,8)+'...','ru');
+    poll(tid,(results)=>{
+      progAnim('rprog',false);setSt('rstat','✓ '+results.length+' cover(s)','ok');
+      btnState('bgr',false,'Cover / Remix');onDone(results,'Cover');
+    },(err)=>{progAnim('rprog',false);setSt('rstat','✗ '+err,'er');btnState('bgr',false,'Cover / Remix')},
+    (msg)=>setSt('rstat',msg,'ru'));
+  }catch(e){progAnim('rprog',false);setSt('rstat','✗ '+e.message,'er');btnState('bgr',false,'Cover / Remix')}
+}
+
+function onRpMode(){
+  const mode = g('rpmode').value;
+  const strEl = g('rpstr');
+  const strRow = strEl?.closest('.fld');
+  if(mode === 'balanced'){
+    strEl.disabled = false;
+    if(strRow) strRow.style.opacity = '1';
+  } else if(mode === 'conservative'){
+    strEl.disabled = true;
+    strEl.value = 0;
+    g('rpstrv').textContent = '0.00';
+    if(strRow) strRow.style.opacity = '.35';
+  } else if(mode === 'aggressive'){
+    strEl.disabled = true;
+    strEl.value = 1;
+    g('rpstrv').textContent = '1.00';
+    if(strRow) strRow.style.opacity = '.35';
+  }
+}
+
+function onBsMode(){
+  const mode = g('bsmode').value;
+  const strEl = g('bsstr');
+  const strRow = strEl?.closest('.fld');
+  if(mode === 'balanced'){
+    strEl.disabled = false;
+    if(strRow) strRow.style.opacity = '1';
+  } else if(mode === 'conservative'){
+    strEl.disabled = true;
+    strEl.value = 0;
+    g('bsstrv').textContent = '0.00';
+    if(strRow) strRow.style.opacity = '.35';
+  } else if(mode === 'aggressive'){
+    strEl.disabled = true;
+    strEl.value = 1;
+    g('bsstrv').textContent = '1.00';
+    if(strRow) strRow.style.opacity = '.35';
+  }
+}
+
+async function genRepaint(){
+  if(!repaintFile){notif('Chargez une source audio via le transport (bouton SRC)','er');return}
+  const cap=g('rpcap').value.trim();if(!cap){notif('Décrivez le contenu de la section','er');return}
+  btnState('bgrp',true,'Repaint');setSt('rpstat','⏳ En queue...','ru');progAnim('rpprog',true);
+  try{
+    const fd=buildFD(isThinking('repaint'),g('rpbatch').value,g('svc-model').value);
+    fd.append('task_type','repaint');
+    fd.append('prompt',cap);fd.append('lyrics',g('rplyr').value);
+    fd.append('repainting_start',g('rpstart').value);
+    fd.append('repainting_end',g('rpend').value);
+    fd.append('ctx_audio',repaintFile);
+    fd.append('repaint_mode',g('rpmode').value);
+    fd.append('repaint_strength',g('rpstr').value);
+    fd.append('vocal_language',g('rplang').value||'unknown');
+    if(repaintRefFile) fd.append('reference_audio',repaintRefFile);
+    if(g('rppbpm').value) fd.append('bpm',g('rppbpm').value);
+    if(g('rppdur').value && g('rppdur').value != -1) fd.append('audio_duration',g('rppdur').value);
+    if(g('rppkey').value) fd.append('key_scale',g('rppkey').value);
+    if(g('rpptimesig').value) fd.append('time_signature',g('rpptimesig').value);
+    const tid=await submit(fd);setSt('rpstat','⏳ '+tid.slice(0,8)+'...','ru');
+    poll(tid,(results)=>{
+      progAnim('rpprog',false);setSt('rpstat','✓ '+results.length+' version(s)','ok');
+      btnState('bgrp',false,'Repaint section');onDone(results,'Repaint');
+    },(err)=>{progAnim('rpprog',false);setSt('rpstat','✗ '+err,'er');btnState('bgrp',false,'Repaint section')},
+    (msg)=>setSt('rpstat',msg,'ru'));
+  }catch(e){progAnim('rpprog',false);setSt('rpstat','✗ '+e.message,'er');btnState('bgrp',false,'Repaint section')}
+}
+
+async function genBase(){
+  if(!baseFile){notif('Chargez une source audio via le transport (bouton SRC)','er');return}
+  if(!selectedInstrs.size){notif('Sélectionnez au moins un instrument','er');return}
+
+  const instrList=[...selectedInstrs];
+  const instrStr=instrList.join(', ');
+  let instruction='';
+  if(baseMode==='lego') instruction=`Generate the ${instrList[0]} track based on the audio context:`;
+  else if(baseMode==='extract') instruction=`Extract the ${instrList[0]} track from the audio:`;
+  else instruction=`Complete the input track with ${instrStr}:`;
+
+  btnState('bgbs',true);
+  setSt('bsstat',`⏳ ${baseMode} en cours...`,'ru');
+  progAnim('bsprog',true);
+
+  // Pour lego, calculer la durée réelle de la source ou de la région
+  let realBaseDur = null;
+  if(baseMode === 'lego') {
+    const start = parseFloat(g('bsstart').value) || 0;
+    const end = parseFloat(g('bsend').value);
+    if(end > 0 && end > start) {
+      realBaseDur = Math.round(end - start);
+    } else {
+      realBaseDur = await getAudioDuration(baseFile);
+    }
+    console.log('[genBase] realBaseDur=', realBaseDur, 'start=', g('bsstart').value, 'end=', g('bsend').value);
+  } else if(baseMode === 'complete') {
+    realBaseDur = Math.round(await getAudioDuration(baseFile));
+    console.log('[genBase] complete realBaseDur=', realBaseDur);
+  }
+
+  try{
+    const fd=buildFD(isThinking(baseMode),g('bsbatch').value,g('svc-model').value);
+    fd.append('task_type',baseMode);
+    fd.append('ctx_audio',baseFile);
+    fd.append('vocal_language',g('bslang').value||'unknown');
+    if(baseMode === 'lego' || baseMode === 'complete'){
+      fd.set('thinking','false');
+      fd.set('use_cot_metas','true');
+      fd.set('use_cot_language','false');
+    }
+    if(g('bsbpm').value) fd.append('bpm',g('bsbpm').value);
+    if((baseMode === 'lego' || baseMode === 'complete') && realBaseDur) fd.append('audio_duration', realBaseDur);
+    else if(g('bsdur').value && g('bsdur').value != -1) fd.append('audio_duration',g('bsdur').value);
+    if(g('bskey').value) fd.append('key_scale',g('bskey').value);
+    if(g('bstimesig').value) fd.append('time_signature',g('bstimesig').value);
+    if(baseRefFile) fd.append('reference_audio',baseRefFile);
+    if(baseMode === 'lego'){
+      fd.append('repaint_mode',g('bsmode').value);
+      fd.append('repaint_strength',g('bsstr').value);
+    } else if(baseMode === 'complete'){
+      fd.append('audio_cover_strength',g('bsacs').value);
+    }
+
+    if(baseMode==='extract'){
+      fd.append('prompt',instrList[0]);
+    } else {
+      fd.append('instruction',instruction);
+      fd.append('prompt',g('bscap').value||instrStr);
+      fd.append('lyrics',g('bslyr').value||'');
+    }
+    if(baseMode==='lego'){
+      fd.append('repainting_start',g('bsstart').value);
+      // Forcer repainting_end avec durée réelle pour que le serveur calcule audio_duration correctement
+      const bsend = parseFloat(g('bsend').value);
+      fd.append('repainting_end', (bsend > 0) ? bsend : realBaseDur);
+    }
+
+    const tid=await submit(fd);
+    setSt('bsstat','⏳ '+tid.slice(0,8)+'...','ru');
+
+    poll(tid, async (results)=>{
+      progAnim('bsprog',false);
+      const lbl=baseMode==='extract'?'Extract':baseMode==='complete'?'Complete':'Lego';
+      setSt('bsstat',`✓ ${results.length} piste(s) ${lbl}`,'ok');
+      btnState('bgbs',false,lbl);
+      if(baseMode==='lego' && baseFile){
+        const totalDur = await getAudioDuration(baseFile);
+        const offsetSec = parseFloat(g('bsstart').value)||0;
+        hideES();
+        for(let i=0; i<results.length; i++){
+          const info=results[i];
+          const raw=info.file||info.url||'';
+          const url=raw.startsWith('data:')||raw.startsWith('blob:') ? raw : `${API()}${raw}`;
+          const seed=info.seed_value||'';
+          const bpm=info.metas?.bpm?`${info.metas.bpm} BPM`:'';
+          const key=info.metas?.keyscale||'';
+          const dur=info.metas?.duration?`${Math.round(info.metas.duration)}s`:'';
+          setSt('bsstat',`⏳ Positionnement piste ${i+1}...`,'ru');
+          const paddedUrl = await padAudioToPosition(url, offsetSec, totalDur);
+          addTrack(paddedUrl,`${lbl} ${instrStr} #${i+1}`,seed,[bpm,key,dur].filter(Boolean));
+        }
+        setSt('bsstat',`✓ ${results.length} piste(s) ${lbl}`,'ok');
+        updStats();
+      } else {
+        onDone(results,lbl+' '+instrStr);
+      }
+    },(err)=>{
+      progAnim('bsprog',false);
+      setSt('bsstat','✗ '+err,'er');
+      btnState('bgbs',false,g('bgbs-lbl').textContent);
+    },(msg)=>setSt('bsstat',msg,'ru'));
+  }catch(e){
+    progAnim('bsprog',false);
+    setSt('bsstat','✗ '+e.message,'er');
+    btnState('bgbs',false,g('bgbs-lbl').textContent);
+  }
+}
+
+</script>
+</body>
+</html>
