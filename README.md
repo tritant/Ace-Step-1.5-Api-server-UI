@@ -5,6 +5,7 @@ A single-file HTML/JS interface for [ACE-Step 1.5](https://github.com/ace-step/A
 ![ACE-Step Studio](https://img.shields.io/badge/ACE--Step-1.5-blue) ![HTML](https://img.shields.io/badge/HTML-single--file-green)
 
 ---
+<img width="2557" height="1235" alt="Capture d&#39;écran 2026-04-16 072216" src="https://github.com/user-attachments/assets/24a1f484-7adb-44e8-be18-f9f66f6cbb82" />
 
 ## Features
 
