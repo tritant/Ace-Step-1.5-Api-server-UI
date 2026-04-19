@@ -662,6 +662,26 @@ input:checked+.tk::before{transform:translateX(16px);background:#fff}
     <div class="st" id="svc-stat">Prêt.</div>
     <div class="sh">Modèles chargés</div>
     <div class="st" id="svc-models" style="font-size:10px;line-height:1.6">Chargement...</div>
+
+    <!-- LORA -->
+    <div class="sh">LoRA / LoKr</div>
+    <div class="fld">
+      <label class="lbl">Chemin du dossier LoRA</label>
+      <input type="text" id="lora-path" placeholder="D:\lora-output\my_lora\best" style="font-family:var(--mono);font-size:11px">
+    </div>
+    <div class="fld">
+      <label class="lbl">Scale <span class="lv" id="lora-scalev">1.00</span></label>
+      <input type="range" id="lora-scale" min="0" max="1" step="0.05" value="1" oninput="g('lora-scalev').textContent=parseFloat(this.value).toFixed(2); loraApplyScale(this.value)">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      <button class="bp" onclick="loraLoad()">⬆ Charger</button>
+      <button class="bp" onclick="loraUnload()" style="background:var(--bg3);color:var(--t1);border:1px solid var(--border)">⬇ Décharger</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px">
+      <button class="bp" onclick="loraToggle(true)" style="background:var(--bg3);color:var(--green);border:1px solid var(--green)">✓ Activer</button>
+      <button class="bp" onclick="loraToggle(false)" style="background:var(--bg3);color:var(--t3);border:1px solid var(--border)">✕ Désactiver</button>
+    </div>
+    <div class="st" id="lora-stat">Aucun LoRA chargé.</div>
   </div>
 </aside>
 
@@ -809,6 +829,7 @@ async function loadModels(){
       if(opt) svcSel.value = opt.value;
     }
     onMC(false);
+    loraStatus();
     const svcModels=g('svc-models');
     if(svcModels) svcModels.textContent=normalized.map(m=>(m.is_default?'★ ':'  ')+m.name+(m.is_loaded?' [chargé]':'')).join('\n');
   }catch(e){ console.warn('[loadModels] error:', e); }
@@ -852,6 +873,58 @@ async function initService(){
   }
   btn.disabled=false;
   btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Initialiser le service';
+}
+
+// LoRA
+async function loraFetch(url, body=null){
+  const opts={method:body?'POST':'GET',credentials:'omit'};
+  if(body){opts.body=JSON.stringify(body);opts.headers={'Content-Type':'application/json'};}
+  return fetch(`${API()}${url}`,opts);
+}
+async function loraApplyScale(val){
+  try { await loraFetch('/v1/lora/scale',{scale:parseFloat(val)}); } catch(e){}
+}
+async function loraLoad(){
+  const path=g('lora-path').value.trim();
+  if(!path){setSt('lora-stat','✗ Chemin requis','er');return;}
+  setSt('lora-stat','⏳ Chargement...','ru');
+  try{
+    const r=await loraFetch('/v1/lora/load',{lora_path:path});
+    const d=await r.json();
+    if(r.ok&&d.code===200){
+      setSt('lora-stat','✓ LoRA chargé','ok');
+      const scale=parseFloat(g('lora-scale').value);
+      if(scale<1) await loraFetch('/v1/lora/scale',{scale});
+      loraStatus();
+    } else {setSt('lora-stat','✗ '+(d.error||d.detail||JSON.stringify(d)),'er');}
+  } catch(e){setSt('lora-stat','✗ '+e.message,'er');}
+}
+async function loraUnload(){
+  setSt('lora-stat','⏳ Déchargement...','ru');
+  try{
+    const r=await loraFetch('/v1/lora/unload',{});
+    const d=await r.json();
+    if(r.ok&&d.code===200){setSt('lora-stat','Aucun LoRA chargé.','');}
+    else{setSt('lora-stat','✗ '+(d.error||'Erreur'),'er');}
+  } catch(e){setSt('lora-stat','✗ '+e.message,'er');}
+}
+async function loraToggle(enable){
+  try{
+    await loraFetch('/v1/lora/toggle',{use_lora:enable});
+    loraStatus();
+  } catch(e){setSt('lora-stat','✗ '+e.message,'er');}
+}
+async function loraStatus(){
+  try{
+    const r=await fetch(`${API()}/v1/lora/status`);
+    const d=await r.json();
+    if(d.code===200){
+      const s=d.data;
+      const active=s.use_lora?'actif':'inactif';
+      const loaded=s.lora_loaded;
+      setSt('lora-stat', loaded ? `✓ LoRA ${active} · scale ${s.lora_scale?.toFixed(2)||'?'}${s.active_adapter?' · '+s.active_adapter:''}` : 'Aucun LoRA chargé.', loaded?'ok':'');
+    }
+  } catch(e){}
 }
 
 function onMC(forceDefaults=false){
@@ -1081,6 +1154,11 @@ function updateThinkingState(){
 }
 
 async function submit(fd){
+  // Envoyer le scale LoRA avant génération
+  try {
+    const scale = parseFloat(g('lora-scale').value);
+    await loraFetch('/v1/lora/scale', {scale});
+  } catch(e){}
   // DEBUG — affiche tous les params envoyés
   console.log('[submit] params:', Object.fromEntries(fd.entries()));
   const r=await fetch(`${API()}/release_task`,{method:'POST',body:fd});
