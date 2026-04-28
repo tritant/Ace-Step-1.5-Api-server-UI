@@ -19,7 +19,7 @@ A single-file HTML/JS interface for [ACE-Step 1.5](https://github.com/ace-step/A
 - Multi-track timeline with per-track solo/mute/volume
 - Persistent configuration via localStorage
 - Batch generation support
-
+- Multi loras support
 ---
 
 ## Requirements
